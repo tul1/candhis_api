@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: candhis_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate
+    container_name: migrate
+    depends_on:
+      - postgres
+    volumes:
+      - ./infra/db/migrations:/migrations
+    entrypoint: [
+      "migrate", 
+      "-path", "/migrations", 
+      "-database", "postgres://user:password@postgres:5432/candhis_db?sslmode=disable",
+      "up"
+    ]
+
+  sessionID_scrapper:
+    build:
+      context: .
+      dockerfile: Dockerfile.sessionID
+    container_name: sessionID_scrapper
+    depends_on:
+      - postgres
+      - migrate
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: candhis_db
+    command: go run ./cmd/sessionID_scrapper/main.go
+    volumes:
+      - .:/app
+    working_dir: /app
+
+  campaigns_scrapper:
+    build:
+      context: .
+      dockerfile: Dockerfile.campaigns
+    container_name: campaigns_scrapper
+    depends_on:
+      - postgres
+      - migrate
+      - elasticsearch
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: candhis_db
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    command: go run ./cmd/campaigns_scrapper/main.go
+    volumes:
+      - .:/app
+    working_dir: /app
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+volumes:
+  postgres_data:
