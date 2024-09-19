@@ -124,6 +124,65 @@ docker-compose run migrate down 1
   make clean
   ```
 
+## Accessing the Host and Managing Cron Jobs
+
+### Connecting to the Host
+
+To connect to your Vultr server, use the following SSH command:
+
+```bash
+ssh root@95.179.209.34
+```
+
+If you created a non-root user, use that username instead:
+
+```bash
+ssh astraydev@95.179.209.34
+```
+
+### Checking Cron Jobs
+
+Once connected to the server, you can check the cron jobs that are set up for the `campaigns_scrapper` and `sessionID_scrapper` by editing or viewing the crontab:
+
+1. **View the Crontab**:
+   ```bash
+   crontab -l
+   ```
+
+   This command lists all cron jobs currently set up for your user.
+
+2. **Edit the Crontab**:
+   ```bash
+   crontab -e
+   ```
+
+   This command opens the crontab file in your default editor, allowing you to add, remove, or modify cron jobs.
+
+### Managing Docker Logs
+
+To monitor or troubleshoot the Docker containers, you can view the logs using the following commands:
+
+1. **View All Running Containers**:
+   ```bash
+   docker ps
+   ```
+
+   This command lists all running Docker containers.
+
+2. **View Logs for a Specific Container**:
+
+   - **`campaigns_scrapper` Logs**:
+     ```bash
+     docker logs -f campaigns_scrapper
+     ```
+
+   - **`sessionID_scrapper` Logs**:
+     ```bash
+     docker logs -f sessionID_scrapper
+     ```
+
+   The `-f` option will "follow" the logs, meaning it will show real-time log updates. Press `Ctrl + C` to exit the log view.
+
 ## Next Steps
 
 - **API Interface**: Add an API interface to allow external access to the data stored in Elasticsearch.
