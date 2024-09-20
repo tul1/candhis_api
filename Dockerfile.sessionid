@@ -1,0 +1,18 @@
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN go build -o sessionid_scrapper ./cmd/sessionid_scrapper
+
+FROM alpine:3.18
+
+WORKDIR /app
+
+COPY --from=builder /app/sessionid_scrapper /app/sessionid_scrapper
+
+CMD ["./sessionid_scrapper"]

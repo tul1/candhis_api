@@ -20,9 +20,9 @@ run-infra: db migrate elasticsearch
 	@echo "Infrastructure services are up and running."
 
 .PHONY: sessionID_scrapper
-sessionID_scrapper:
-	@echo "Starting the sessionID_scrapper service..."
-	docker-compose -f $(COMPOSE_FILE) up --build sessionID_scrapper
+sessionid_scrapper:
+	@echo "Starting the sessionid_scrapper service..."
+	docker-compose -f $(COMPOSE_FILE) up --build sessionid_scrapper
 
 .PHONY: campaigns_scrapper
 campaigns_scrapper:

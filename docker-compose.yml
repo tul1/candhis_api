@@ -12,6 +12,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - candhis_network
 
   migrate:
     image: migrate/migrate
@@ -26,25 +28,38 @@ services:
       "-database", "postgres://user:password@postgres:5432/candhis_db?sslmode=disable",
       "up"
     ]
+    networks:
+      - candhis_network
 
-  sessionID_scrapper:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - candhis_network
+
+  sessionid_scrapper:
     build:
       context: .
-      dockerfile: Dockerfile.sessionID
-    container_name: sessionID_scrapper
+      dockerfile: Dockerfile.sessionid
+    container_name: sessionid_scrapper
     depends_on:
       - postgres
-      - migrate
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: user
-      DB_PASSWORD: password
-      DB_NAME: candhis_db
-    command: go run ./cmd/sessionID_scrapper/main.go
-    volumes:
-      - .:/app
-    working_dir: /app
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=candhis_db
+    networks:
+      - candhis_network
 
   campaigns_scrapper:
     build:
@@ -53,28 +68,20 @@ services:
     container_name: campaigns_scrapper
     depends_on:
       - postgres
-      - migrate
       - elasticsearch
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: user
-      DB_PASSWORD: password
-      DB_NAME: candhis_db
-      ELASTICSEARCH_URL: http://elasticsearch:9200
-    command: go run ./cmd/campaigns_scrapper/main.go
-    volumes:
-      - .:/app
-    working_dir: /app
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=candhis_db
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - candhis_network
 
 volumes:
   postgres_data:
+  es_data:
+
+networks:
+  candhis_network:
