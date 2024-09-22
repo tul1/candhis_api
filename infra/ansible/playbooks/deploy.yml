@@ -1,0 +1,9 @@
+---
+- hosts: servers
+  become: yes
+  roles:
+    # - docker
+    - sync_src
+    - db
+    - elasticsearch
+    - systemd

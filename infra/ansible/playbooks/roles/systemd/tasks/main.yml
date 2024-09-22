@@ -1,0 +1,52 @@
+---
+- name: Copy sessionid_scrapper service file
+  template:
+    src: sessionid_scrapper.service.j2
+    dest: /etc/systemd/system/sessionid_scrapper.service
+  notify: 
+    - Reload systemd
+
+- name: Copy sessionid_scrapper timer file
+  template:
+    src: sessionid_scrapper.timer.j2
+    dest: /etc/systemd/system/sessionid_scrapper.timer
+  notify: 
+    - Reload systemd
+
+- name: Copy campaigns_scrapper service file
+  template:
+    src: campaigns_scrapper.service.j2
+    dest: /etc/systemd/system/campaigns_scrapper.service
+  notify: 
+    - Reload systemd
+
+- name: Copy campaigns_scrapper timer file
+  template:
+    src: campaigns_scrapper.timer.j2
+    dest: /etc/systemd/system/campaigns_scrapper.timer
+  notify: 
+    - Reload systemd
+
+- name: Enable and start sessionid_scrapper timer
+  systemd:
+    name: sessionid_scrapper.timer
+    enabled: yes
+    state: started
+
+- name: Enable and start campaigns_scrapper timer
+  systemd:
+    name: campaigns_scrapper.timer
+    enabled: yes
+    state: started
+
+- name: Enable and start sessionid_scrapper service
+  systemd:
+    name: sessionid_scrapper.service
+    enabled: yes
+    state: started
+
+- name: Enable and start campaigns_scrapper service
+  systemd:
+    name: campaigns_scrapper.service
+    enabled: yes
+    state: started

@@ -1,0 +1,5 @@
+---
+- name: Ensure Docker Compose is up for Elasticsearch
+  shell: /usr/local/bin/docker-compose -f /home/astraydev/candhis_api/docker-compose.yml up -d elasticsearch
+  args:
+    chdir: /home/astraydev/candhis_api

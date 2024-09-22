@@ -1,0 +1,13 @@
+---
+- name: Ensure the target directory exists on the remote host
+  file:
+    path: /home/astraydev/candhis_api
+    state: directory
+    mode: '0755'
+
+- name: Synchronize the repository files to the target directory
+  synchronize:
+    src: /home/ptula/personal/candhis_api/
+    dest: /home/astraydev/candhis_api
+    recursive: yes
+    delete: yes

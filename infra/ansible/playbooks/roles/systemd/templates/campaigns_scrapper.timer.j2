@@ -1,0 +1,10 @@
+[Unit]
+Description=Run campaigns_scrapper every 30 minutes
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=30min
+Unit=campaigns_scrapper.service
+
+[Install]
+WantedBy=timers.target

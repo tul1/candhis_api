@@ -1,0 +1,10 @@
+[Unit]
+Description=Run sessionid_scrapper every 12 hours
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=12h
+Unit=sessionid_scrapper.service
+
+[Install]
+WantedBy=timers.target
