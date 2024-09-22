@@ -15,8 +15,13 @@ elasticsearch:
 	@echo "Starting the Elasticsearch service..."
 	docker-compose -f $(COMPOSE_FILE) up -d elasticsearch
 
+.PHONY: logs_stack
+logs_stack:
+	@echo "Starting the Elasticsearch, fluentd and kibana for logs service..."
+	docker-compose -f $(COMPOSE_FILE) up -d elasticsearch_logs fluentd kibana_logs
+
 .PHONY: run-infra
-run-infra: db migrate elasticsearch
+run-infra: db migrate elasticsearch elasticsearch_logs
 	@echo "Infrastructure services are up and running."
 
 .PHONY: sessionID_scrapper
