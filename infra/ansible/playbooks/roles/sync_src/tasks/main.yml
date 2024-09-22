@@ -4,10 +4,14 @@
     path: /home/astraydev/candhis_api
     state: directory
     mode: '0755'
+  tags:
+    - sync_src
 
 - name: Synchronize the repository files to the target directory
   synchronize:
-    src: /home/ptula/personal/candhis_api/
+    src: "{{ src_path }}"
     dest: /home/astraydev/candhis_api
     recursive: yes
     delete: yes
+  tags:
+    - sync_src

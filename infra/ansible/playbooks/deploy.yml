@@ -1,8 +1,10 @@
 ---
 - hosts: servers
   become: yes
+  vars:
+    src_path: "{{ lookup('env', 'GITHUB_ACTIONS') | default(false) | ternary('/home/runner/work/candhis_api/candhis_api/', '/home/ptula/personal/candhis_api/') }}"
   roles:
-    # - docker
+    - docker
     - sync_src
     - db
     - elasticsearch
