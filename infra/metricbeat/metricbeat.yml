@@ -1,0 +1,23 @@
+# infra/metricbeat/metricbeat.yml
+metricbeat.modules:
+- module: system
+  period: 10s
+  metricsets:
+    - cpu
+    - load
+    - memory
+    - network
+    - process
+    - process_summary
+    - diskio
+    - filesystem
+    - fsstat
+  processors:
+    - add_host_metadata: ~
+    - add_cloud_metadata: ~
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch_logs:9200"]
+
+setup.kibana:
+  host: "http://kibana_logs:5601"

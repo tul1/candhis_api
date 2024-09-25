@@ -45,6 +45,22 @@ services:
     networks:
       - candhis_network
 
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:8.1.0
+    container_name: metricbeat
+    user: root
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - ./infra/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch_logs:9200
+    networks:
+      - logs_network
+    depends_on:
+      - elasticsearch_logs
+
   elasticsearch_logs:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0
     container_name: elasticsearch_logs
