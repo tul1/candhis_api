@@ -34,6 +34,19 @@ campaigns_scrapper:
 	@echo "Starting the campaigns_scrapper service..."
 	docker-compose -f $(COMPOSE_FILE) up --build campaigns_scrapper
 
+.PHONY: build-campaigns-scrapper
+build-campaigns-scrapper:
+	@echo "Building the campaigns_scrapper binary"
+	@cd cmd/campaigns_scrapper && $(MAKE) build --no-print-directory
+
+.PHONY: build-sessionid-scrapper
+build-sessionid-scrapper:
+	@echo "Building the sessionid_scrapper binary"
+	@cd cmd/sessionid_scrapper && $(MAKE) build --no-print-directory
+
+.PHONY: build
+build: build-sessionid-scrapper build-campaigns-scrapper
+
 .PHONY: stop
 stop:
 	@echo "Stopping all services..."

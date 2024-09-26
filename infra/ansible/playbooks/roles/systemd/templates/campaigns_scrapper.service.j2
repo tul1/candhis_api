@@ -1,12 +1,11 @@
 [Unit]
-Description=Run the campaigns_scrapper Docker container
-After=docker.service
-Requires=docker.service
+Description=Run the campaigns_scrapper binary
+After=network.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/astraydev/candhis_api
-ExecStart=/usr/local/bin/docker-compose run --rm campaigns_scrapper
+WorkingDirectory=/home/astraydev/candhis_api/bin
+ExecStart=/home/astraydev/candhis_api/bin/campaigns_scrapper -config /home/astraydev/candhis_api/conf/campaigns_scrapper.yml
 SyslogIdentifier=campaigns_scrapper
 
 [Install]

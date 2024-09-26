@@ -1,12 +1,11 @@
 [Unit]
-Description=Run the sessionid_scrapper Docker container
-After=docker.service
-Requires=docker.service
+Description=Run the sessionid_scrapper binary
+After=network.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/astraydev/candhis_api
-ExecStart=/usr/local/bin/docker-compose run --rm sessionid_scrapper
+WorkingDirectory=/home/astraydev/candhis_api/bin
+ExecStart=/home/astraydev/candhis_api/bin/sessionid_scrapper -config /home/astraydev/candhis_api/conf/sessionid_scrapper.yml
 SyslogIdentifier=sessionid_scrapper
 
 [Install]

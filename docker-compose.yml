@@ -104,40 +104,6 @@ services:
     networks:
       - logs_network
 
-  sessionid_scrapper:
-    build:
-      context: .
-      dockerfile: Dockerfile.sessionid
-    container_name: sessionid_scrapper
-    depends_on:
-      - postgres
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=candhis_db
-    networks:
-      - candhis_network
-
-  campaigns_scrapper:
-    build:
-      context: .
-      dockerfile: Dockerfile.campaigns
-    container_name: campaigns_scrapper
-    depends_on:
-      - postgres
-      - elasticsearch
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=candhis_db
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-    networks:
-      - candhis_network
-
 volumes:
   postgres_data:
   es_data:

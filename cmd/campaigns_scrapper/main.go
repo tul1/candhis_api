@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -16,6 +16,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/jackc/pgx/v4"
+	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
 )
 
 const (
@@ -224,16 +225,32 @@ func pushWaveDataToES(waveDataList []WaveData) error {
 	return nil
 }
 
+func loadConfig(configFile string) Config {
+	var config Config
+	err := loadconfig.LoadConfig(configFile, &config)
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+	return config
+}
+
 func main() {
 	ctx := context.Background()
 
+	// Parse the config file path from the command line arguments
+	configFile := flag.String("config", "", "Path to the configuration file")
+	flag.Parse()
+
+	// Load configuration
+	config := loadConfig(*configFile)
+
 	// Connect to the PostgreSQL database
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"))
+		config.DBUser,
+		config.DBPassword,
+		config.DBHost,
+		config.DBPort,
+		config.DBName)
 
 	conn, err := pgx.Connect(ctx, dbURL)
 	if err != nil {
