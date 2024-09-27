@@ -14,12 +14,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - candhis_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   migrate:
     image: migrate/migrate
     container_name: migrate
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./infra/db/migrations:/migrations
     entrypoint: [

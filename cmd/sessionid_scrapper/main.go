@@ -10,7 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/tul1/candhis_api/internal/application/model"
+	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
+	"github.com/tul1/candhis_api/internal/pkg/db"
 	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
 )
 
@@ -56,15 +58,6 @@ func getSessionIDWithScrapingbee(client *http.Client, scrapingbeeAPIKey string) 
 	return "", fmt.Errorf("failed to retrieve cookie PHPSESSID, url: %s", reqURL)
 }
 
-func updateSessionID(ctx context.Context, db *pgx.Conn, sessionID string) error {
-	query := `UPDATE candhis_session SET id = $1, created_at = $2`
-	_, err := db.Exec(ctx, query, sessionID, time.Now())
-	if err != nil {
-		return fmt.Errorf("failed to update session ID: %w", err)
-	}
-	return nil
-}
-
 func loadConfig(configFile string) Config {
 	var config Config
 	err := loadconfig.LoadConfig(configFile, &config)
@@ -98,13 +91,14 @@ func main() {
 		config.DBPort,
 		config.DBName)
 
-	conn, err := pgx.Connect(ctx, dbURL)
+	db, err := db.NewDatabaseConnection(dbURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
-	defer conn.Close(ctx)
+	defer db.Close()
 
-	err = updateSessionID(ctx, conn, phpsessid)
+	sessionIDREpo := persistence.NewSessionIDRepository(db)
+	err = sessionIDREpo.Update(ctx, &model.CandhisSessionID{ID: phpsessid, CreatedAt: time.Now().UTC()})
 	if err != nil {
 		log.Fatalf("Failed to update session ID in database: %v", err)
 	}
