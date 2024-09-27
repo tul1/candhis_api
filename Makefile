@@ -1,4 +1,17 @@
 COMPOSE_FILE=docker-compose.yml
+# Define environment variables for database connection
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=user
+DATABASE_PASSWORD=password
+DATABASE_NAME=candhis_db
+# Combine all environment variables into a single variable
+DB_ENV_VARS=DATABASE_HOST=$(DATABASE_HOST) \
+            DATABASE_PORT=$(DATABASE_PORT) \
+            DATABASE_USER=$(DATABASE_USER) \
+            DATABASE_PASSWORD=$(DATABASE_PASSWORD) \
+            DATABASE_NAME=$(DATABASE_NAME)
+
 
 .PHONY: db
 db:
@@ -44,8 +57,17 @@ build-sessionid-scrapper:
 	@echo "Building the sessionid_scrapper binary"
 	@cd cmd/sessionid_scrapper && $(MAKE) build --no-print-directory
 
+.PHONY: download
+download:
+	go mod download
+
 .PHONY: build
 build: build-sessionid-scrapper build-campaigns-scrapper
+
+.PHONY: test-integration
+test-integration:
+	go clean -testcache
+	$(DB_ENV_VARS) go test -timeout=15s -count=1 -p 1 ./test/integration/...
 
 .PHONY: stop
 stop:

@@ -15,7 +15,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
-	"github.com/jackc/pgx/v4"
+	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
+	"github.com/tul1/candhis_api/internal/pkg/db"
 	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
 )
 
@@ -162,18 +163,6 @@ func getTableData(client *http.Client, phpsessid string) ([]WaveData, error) {
 	return waveDataList, nil
 }
 
-func getSessionIDFromDB(ctx context.Context, conn *pgx.Conn) (string, error) {
-	var sessionID string
-	query := `SELECT id FROM candhis_session`
-
-	err := conn.QueryRow(ctx, query).Scan(&sessionID)
-	if err != nil {
-		return "", fmt.Errorf("failed to retrieve session ID from DB: %w", err)
-	}
-
-	return sessionID, nil
-}
-
 func sanitizeDocumentID(date, time string) string {
 	// Replace slashes with hyphens in the date and concatenate with time
 	return strings.ReplaceAll(date, "/", "-") + "-" + time
@@ -252,21 +241,22 @@ func main() {
 		config.DBPort,
 		config.DBName)
 
-	conn, err := pgx.Connect(ctx, dbURL)
+	db, err := db.NewDatabaseConnection(dbURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
-	defer conn.Close(ctx)
+	defer db.Close()
 
 	// Retrieve the latest session ID from the database
-	sessionID, err := getSessionIDFromDB(ctx, conn)
+	sessionIDRepo := persistence.NewSessionIDRepository(db)
+	sessionID, err := sessionIDRepo.Get(ctx)
 	if err != nil {
 		log.Fatalf("Failed to retrieve session ID: %v", err)
 	}
 
 	// Create an HTTP client and use the session ID to scrape data
 	client := &http.Client{}
-	waveDataList, err := getTableData(client, sessionID)
+	waveDataList, err := getTableData(client, sessionID.ID)
 	if err != nil {
 		log.Fatalf("Failed to get table data: %v", err)
 	}
