@@ -1,4 +1,4 @@
-name: Precheck
+name: integration tests
 
 on:
   push:
