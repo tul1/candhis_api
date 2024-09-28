@@ -1,0 +1,92 @@
+---
+# Step 1: Ensure the bin directory exists on the host
+- name: Ensure candhis_api/bin/ directory exists
+  file:
+    path:  "{{ target_path }}/bin"
+    state: directory
+    owner: astraydev
+    group: astraydev
+    mode: '0755'
+  tags:
+    - prepare_directories
+
+# Step 2: Copy application binaries to the host
+- name: Copy campaigns_scrapper binary to the host
+  copy:
+    src: "{{ binaries_src_path }}/campaigns_scrapper"
+    dest: "{{ target_path }}/bin/campaigns_scrapper"
+    owner: astraydev
+    group: astraydev
+    mode: '0755'
+  tags:
+    - copy_binaries
+
+- name: Copy sessionid_scrapper binary to the host
+  copy:
+    src: "{{ binaries_src_path }}/sessionid_scrapper"
+    dest: "{{ target_path }}/bin/sessionid_scrapper"
+    owner: astraydev
+    group: astraydev
+    mode: '0755'
+  tags:
+    - copy_binaries
+
+# Step 3: Copy app configuration files to the host
+- name: Ensure candhis_api/conf/ directory exists
+  file:
+    path:  "{{ target_path }}/conf"
+    state: directory
+    owner: astraydev
+    group: astraydev
+    mode: '0755'
+  tags:
+    - prepare_directories
+
+- name: Copy configuration files to the host
+  copy:
+    src: "{{ config_src_path }}"
+    dest: "{{ target_path }}"
+    owner: astraydev
+    group: astraydev
+    mode: '0755'
+  tags:
+    - copy_config
+
+# Step 4: Set up and manage systemd services and timers
+- name: Copy sessionid_scrapper service file
+  become: true
+  template:
+    src: sessionid_scrapper.service.j2
+    dest: /etc/systemd/system/sessionid_scrapper.service
+  notify: 
+    - Reload systemd
+  tags:
+    - systemd_setup
+
+- name: Copy sessionid_scrapper timer file
+  become: true
+  template:
+    src: sessionid_scrapper.timer.j2
+    dest: /etc/systemd/system/sessionid_scrapper.timer
+  notify: 
+    - Reload systemd
+  tags:
+    - systemd_setup
+
+- name: Copy campaigns_scrapper service file
+  become: true
+  template:
+    src: campaigns_scrapper.service.j2
+    dest: /etc/systemd/system/campaigns_scrapper.service
+  notify: 
+    - Reload systemd
+  
+- name: Copy campaigns_scrapper timer file
+  become: true
+  template:
+    src: campaigns_scrapper.timer.j2
+    dest: /etc/systemd/system/campaigns_scrapper.timer
+  notify: 
+    - Reload systemd
+  tags:
+    - systemd_setup

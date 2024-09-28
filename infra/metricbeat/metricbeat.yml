@@ -14,10 +14,23 @@ metricbeat.modules:
     - fsstat
   processors:
     - add_host_metadata: ~
-    - add_cloud_metadata: ~
+
+# I have to move metricbeat the candhis_network to monitor the db and also I'll have to update output.elasticsearch and setup.kibana
+# - module: postgresql
+#   metricsets: 
+#     - database
+#     - bgwriter
+#     - activity
+#   period: 10s
+#   hosts: ["postgres://user:password@postgres:5432/candhis_db"]
+#   username: "user"
+#   password: "password"
+#   ssl: false
 
 output.elasticsearch:
   hosts: ["http://elasticsearch_logs:9200"]
+  # hosts: ["http://localhost:9201"]
 
 setup.kibana:
   host: "http://kibana_logs:5601"
+  # hosts: ["http://localhost:5601"]

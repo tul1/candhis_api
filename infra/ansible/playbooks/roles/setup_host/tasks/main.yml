@@ -1,0 +1,147 @@
+---
+# Step 1: Create a new user 'astraydev' if not exists
+- name: Check if user 'astraydev' exists
+  command: id -u astraydev
+  register: user_check
+  ignore_errors: true
+  tags:
+    - create_user
+
+- name: Create user 'astraydev' if not exists
+  user:
+    name: astraydev
+    comment: 'Deployment User'
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    create_home: yes
+    password: "{{ astraydev_password | password_hash('sha512') }}"
+  when: user_check.rc != 0
+  tags:
+    - create_user
+
+- name: Ensure .ssh directory exists
+  file:
+    path: /home/astraydev/.ssh
+    state: directory
+    owner: astraydev
+    group: astraydev
+    mode: '0700'
+  tags:
+    - create_user
+
+- name: Add SSH key for 'astraydev' user
+  copy:
+    src: "{{ ssh_key_path }}"
+    dest: /home/astraydev/.ssh/authorized_keys
+    owner: astraydev
+    group: astraydev
+    mode: '0600'
+  tags:
+    - create_user
+
+- name: Allow 'astraydev' to use sudo without a password
+  copy:
+    dest: /etc/sudoers.d/astraydev
+    content: "astraydev ALL=(ALL) NOPASSWD:ALL"
+    mode: '0440'
+  when: user_astraydev.found is not defined
+  tags:
+    - create_user
+
+# Step 2: Install Docker and Docker Compose as 'astraydev' user
+- name: Install Docker dependencies
+  apt:
+    name: 
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+    state: present
+    update_cache: yes
+  tags:
+    - install_docker
+
+- name: Download Docker GPG key
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /tmp/docker.gpg
+  tags:
+    - install_docker
+
+- name: Add Docker GPG key
+  apt_key:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    state: present
+  tags:
+    - install_docker
+
+- name: Add Docker repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+    state: present
+  tags:
+    - install_docker
+
+- name: Update apt and install Docker CE
+  apt:
+    name: 
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: latest
+    update_cache: yes
+  tags:
+    - install_docker
+
+- name: Install Docker Compose
+  shell: curl -L "https://github.com/docker/compose/releases/download/v2.15.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  tags:
+    - install_docker_compose
+
+- name: Set permissions for Docker Compose
+  file:
+    path: /usr/local/bin/docker-compose
+    mode: '0755'
+  tags:
+    - install_docker_compose
+
+- name: Add user 'astraydev' to the docker group
+  user:
+    name: astraydev
+    groups: docker
+    append: yes
+  tags:
+    - install_docker
+
+# Step 3: Set up automatic updates for the host
+- name: Ensure unattended-upgrades is installed
+  apt:
+    name: unattended-upgrades
+    state: present
+    update_cache: yes
+  tags:
+    - auto_update
+
+- name: Enable automatic updates
+  copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+  tags:
+    - auto_update
+
+# Step 4: Install and configure UFW (Uncomplicated Firewall)
+- name: Install ufw if not present
+  apt:
+    name: ufw
+    state: present
+  tags:
+    - firewall
+
+- name: Ensure ufw is enabled
+  ufw:
+    state: enabled
+  tags:
+    - firewall

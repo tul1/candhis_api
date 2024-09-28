@@ -54,6 +54,11 @@ services:
       - es_data:/usr/share/elasticsearch/data
     networks:
       - candhis_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
 
   metricbeat:
     image: docker.elastic.co/beats/metricbeat:8.1.0
@@ -69,7 +74,8 @@ services:
     networks:
       - logs_network
     depends_on:
-      - elasticsearch_logs
+      elasticsearch_logs:
+        condition: service_healthy
 
   elasticsearch_logs:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0
@@ -84,14 +90,17 @@ services:
       - es_logs_data:/usr/share/elasticsearch/data
     networks:
       - logs_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
 
   fluentd:
     build:
       context: ./infra/fluentd
       dockerfile: Dockerfile
     container_name: fluentd
-    depends_on:
-      - elasticsearch_logs
     environment:
       FLUENT_ELASTICSEARCH_HOST: elasticsearch_logs
       FLUENT_ELASTICSEARCH_PORT: 9200
@@ -100,12 +109,13 @@ services:
       - /var/log/journal:/var/log/journal
     networks:
       - logs_network
+    depends_on:
+      elasticsearch_logs:
+        condition: service_healthy
 
   kibana_logs:
     image: docker.elastic.co/kibana/kibana:8.1.0
     container_name: kibana_logs
-    depends_on:
-      - elasticsearch_logs
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch_logs:9200
       - SERVER_HOST=0.0.0.0
@@ -113,6 +123,9 @@ services:
       - "5601:5601"
     networks:
       - logs_network
+    depends_on:
+      elasticsearch_logs:
+        condition: service_healthy
 
 volumes:
   postgres_data:

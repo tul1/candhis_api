@@ -1,22 +1,35 @@
-name: Deploy Service Update
+name: Deploy Application
+
+# on:
+#   push:
+#     branches:
+#       - main
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "*" ]
+  workflow_call:
+
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
 
-    - name: Run playbook
+    - name: Build binaries using Makefile
+      run: make build
+
+    - name: Run playbook to install application
       uses: dawidd6/action-ansible-playbook@v2
       with:
-        playbook: playbooks/deploy.yml
+        playbook: playbooks/install_app.yml
         directory: ./infra/ansible
         key: ${{secrets.ANSIBLE_SSH_PRIVATE_KEY}}
         inventory: |
@@ -27,6 +40,4 @@ jobs:
           95.179.209.34 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCuuFKl0doae6LziEkmNlVKVTwNIwP6dzTzwVhhCQIv1YihWsHKDwM+PkgJDTwhQ0z+EjWjmnCoveQAL13xmpYwf6RDxDP4XW7jf3FC8G8MsRbs+kgoCrz9QkkE2MUTzpNriWTiGSmjzWegQ389Y20APzcW7l44mZLNCpogfOGFaGKg4o5I0NPalaQRlI37uXGRLi8lkII1/vv1U3sH/uXNmv3HwzeYu2fc8/mk3S/qElxvwArEeb1K7nPhK6zDXsT2e4+4xFxjloMynrcryDIBg7DWOxM2TwkJzZaOrCSacubV3jyu7NgU2w+klkQzqJSbqB9RiQsdcdyi1RebLhP58S3eEVHSIlpH4cnOxPvJff2Tam9U2JcU3Pa9glRAlTftW6Ga/bEQTR0/3/kqKpamtNII0hsA1WaIFfVIL3hFJ27hoqWi3Bu8ZRvYtyJZsoHgrB7LA+1G3gij6n2Z13Q19wfu8EVWLu0I1JIxbI0lLlxneHYcSfCwYcqv56FNg/U=
           95.179.209.34 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKUgH/wyaZZULvrYkiUPh5Uj75Gw91bTqxlDN8jgWZbAWGisJ2d9D8+CBUaGCGM7LKuzPQgrX63YBtDLdWwgiyA=
         options: |
-          --tags "sync_src"
           -vv
-

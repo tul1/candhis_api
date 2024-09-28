@@ -1,0 +1,10 @@
+---
+- hosts: servers
+  become_user: astraydev
+  vars:
+    infra_src_path: "{{ playbook_dir }}/../../"
+    docker_compose_src: "{{ playbook_dir }}/../../../docker-compose.yml"
+    makefile_src: "{{ playbook_dir }}/../../../Makefile"
+    target_path: "/home/astraydev/candhis_api"
+  roles:
+    - setup_app_infra

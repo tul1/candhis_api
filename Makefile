@@ -33,7 +33,7 @@ logs_stack:
 	@echo "Starting the Elasticsearch, fluentd, metricbeat and kibana for logs service..."
 	docker-compose up -d elasticsearch_logs fluentd metricbeat kibana_logs
 
-.PHONY: run-infra
+.PHONY: run_app_infra
 run-infra: db elasticsearch logs_stack
 	@echo "Infrastructure services are up and running."
 
