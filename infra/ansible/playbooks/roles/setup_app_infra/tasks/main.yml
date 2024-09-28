@@ -1,0 +1,87 @@
+---
+# Step 1: Copy necessary files to the host
+- name: Copy infra directory to the host
+  copy:
+    src: "{{ infra_src_path }}"
+    dest: "{{ target_path }}/infra/"
+    owner: astraydev
+    group: astraydev
+    mode: '0755'
+  tags:
+    - copy_files
+
+- name: Copy Metricbeat configuration file with root privileges
+  become_user: root
+  copy:
+    src: "{{ infra_src_path }}/metricbeat/metricbeat.yml"
+    dest: "{{ target_path }}/infra/metricbeat/metricbeat.yml"
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - copy_files
+
+- name: Copy docker-compose.yml to the host
+  copy:
+    src: "{{ docker_compose_src }}"
+    dest: "{{ target_path }}/docker-compose.yml"
+    owner: astraydev
+    group: astraydev
+    mode: '0644'
+  tags:
+    - copy_files
+
+- name: Copy Makefile to the host
+  copy:
+    src: "{{ makefile_src }}"
+    dest: "{{ target_path }}/Makefile"
+    owner: astraydev
+    group: astraydev
+    mode: '0644'
+  tags:
+    - copy_files
+
+# Step 2: Run infrastructure app services using Makefile
+- name: Run infrastructure app services using Makefile
+  shell: make run_app_infra
+  args:
+    chdir: "{{ target_path }}"
+  tags:
+    - run_app_infra
+
+# Step 3: Insert Initial Data into candhis_session Table
+- name: Insert a new session ID and date into candhis_session table
+  shell: |
+    docker-compose exec -T postgres psql -U user -d candhis_db -c "
+    WITH check_empty AS (
+      SELECT COUNT(*) AS cnt FROM candhis_session
+    )
+    INSERT INTO candhis_session (id, created_at)
+    SELECT 'noob_ID', NOW()
+    FROM check_empty
+    WHERE cnt = 0;
+    "
+  args:
+    chdir: "{{ target_path }}"
+  tags:
+    - init_db
+
+# Step 4: Open Port 5601 for Kibana in UFW and iptables
+- name: Ensure port 5601 is open in the firewall
+  ufw:
+    rule: allow
+    port: "5601"
+    proto: tcp
+    comment: "Allow Kibana access"
+  tags:
+    - open_kibana_port
+
+- name: Open port 5601 for Kibana in iptables
+  become_user: root
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: 5601
+    jump: ACCEPT
+  tags:
+    - open_kibana_port

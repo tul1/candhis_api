@@ -1,0 +1,9 @@
+---
+- hosts: servers
+  become_user: root
+  vars:
+    binaries_src_path: "{{ playbook_dir }}/../../../bin"
+    config_src_path: "{{ playbook_dir }}/../../../conf"
+    target_path: "/home/astraydev/candhis_api"
+  roles:
+    - install_app
