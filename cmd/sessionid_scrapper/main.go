@@ -2,69 +2,37 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
-	"strings"
-	"time"
 
-	"github.com/tul1/candhis_api/internal/application/model"
+	"github.com/tul1/candhis_api/internal/application/service"
+	"github.com/tul1/candhis_api/internal/application/service/client"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/pkg/db"
 	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
 )
 
-const (
-	scrapingbeeURL = "https://app.scrapingbee.com/api/v1/"
-
-	// In order to create and activate the sessionID cookie we need to click in any buttom of the web page.
-	// The ID "#idBtnAr" is the ID of the buttom "Archives" and the ID "#idBtnTR" is the buttom "temps reel".
-	scrapingbeeJSScenario = `{"instructions":[{"click":"#idBtnAr"},{"wait":1000},{"click":"#idBtnTR"},{"wait":1000}]}`
-
-	candhisURL = "https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ=="
-)
-
-func getSessionIDWithScrapingbee(client *http.Client, scrapingbeeAPIKey string) (string, error) {
-	params := url.Values{}
-	params.Add("api_key", scrapingbeeAPIKey)
-	params.Add("url", candhisURL)
-	params.Add("js_scenario", scrapingbeeJSScenario)
-
-	reqURL := fmt.Sprintf("%s?%s", scrapingbeeURL, params.Encode())
-	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+func loadConfig(configFile string) (*Config, error) {
+	var config *Config
+	err := loadconfig.LoadConfig(configFile, config)
 	if err != nil {
-		return "", fmt.Errorf("failed to create request, url: %s, error: %w", reqURL, err)
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
-
-	err = req.ParseForm()
-	if err != nil {
-		return "", fmt.Errorf("failed to parse form, url: %s, error: %w", reqURL, err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to perform request, url: %s, error: %w", reqURL, err)
-	}
-
-	cookies := resp.Header["Set-Cookie"]
-	for _, cookie := range cookies {
-		if strings.Contains(cookie, "PHPSESSID") {
-			return strings.Split(cookie, ";")[0], nil
-		}
-	}
-
-	return "", fmt.Errorf("failed to retrieve cookie PHPSESSID, url: %s", reqURL)
+	return config, nil
 }
 
-func loadConfig(configFile string) Config {
-	var config Config
-	err := loadconfig.LoadConfig(configFile, &config)
+func createDBConnection(config Config) (*sql.DB, error) {
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.DBUser, config.DBPassword, config.DBHost, config.DBPort, config.DBName)
+
+	db, err := db.NewDatabaseConnection(dbURL)
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		return nil, fmt.Errorf("failed to connect to PostgreSQL: %w", err)
 	}
-	return config
+
+	return db, nil
 }
 
 func main() {
@@ -75,33 +43,32 @@ func main() {
 	flag.Parse()
 
 	// Load configuration
-	config := loadConfig(*configFile)
-
-	client := &http.Client{}
-	phpsessid, err := getSessionIDWithScrapingbee(client, config.ScrapingbeeAPIKey)
+	config, err := loadConfig(*configFile)
 	if err != nil {
-		log.Fatalf("Failed to get sessionID: %v", err)
+		log.Fatalf("%v", err)
 	}
 
-	// Connect to the PostgreSQL database
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		config.DBUser,
-		config.DBPassword,
-		config.DBHost,
-		config.DBPort,
-		config.DBName)
-
-	db, err := db.NewDatabaseConnection(dbURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
-	}
+	// Create cConnect to the PostgreSQL database
+	db, err := createDBConnection(*config)
 	defer db.Close()
-
-	sessionIDREpo := persistence.NewSessionIDRepository(db)
-	err = sessionIDREpo.Update(ctx, &model.CandhisSessionID{ID: phpsessid, CreatedAt: time.Now().UTC()})
 	if err != nil {
-		log.Fatalf("Failed to update session ID in database: %v", err)
+		log.Fatalf("%v", err)
 	}
 
-	log.Print("Session ID inserted into PostgreSQL")
+	// Create candhisScraper
+	httpClient := http.Client{}
+	defer httpClient.CloseIdleConnections()
+
+	candhisScraper := service.NewCandhisScraper(
+		persistence.NewSessionIDRepository(db),
+		client.NewScrapingBeeClient(&httpClient, config.ScrapingbeeAPIKey),
+	)
+
+	// Retrieve and Store CandhisSessionID in db
+	log.Print("Start to retrieve from Candhis web and store candhisSessionID to DB")
+	err = candhisScraper.RetrieveAndStoreCandhisSessionID(ctx)
+	if err != nil {
+		log.Fatalf("failed retrieve candhis session ID: %v", err)
+	}
+	log.Print("Finished to retrieve from Candhis web and store candhisSessionID to DB: Successfully")
 }

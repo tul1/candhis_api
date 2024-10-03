@@ -22,7 +22,7 @@ func NewSessionIDPersistor(t *testing.T, db *sql.DB) *sessionIDPersistor {
 }
 
 func (p *sessionIDPersistor) Add(sessionID *model.CandhisSessionID) {
-	_, err := p.db.Exec("INSERT INTO candhis_session (id, created_at) VALUES ($1, $2)", sessionID.ID, sessionID.CreatedAt)
+	_, err := p.db.Exec("INSERT INTO candhis_session (id, created_at) VALUES ($1, $2)", sessionID.ID(), sessionID.CreatedAt())
 	if err != nil {
 		p.t.Fatalf("failed to insert session ID: %v", err)
 	}

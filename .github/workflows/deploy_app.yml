@@ -1,17 +1,9 @@
 name: Deploy Application
 
-# on:
-#   push:
-#     branches:
-#       - main
-
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "*" ]
-  workflow_call:
-
+    branches:
+      - main
 
 jobs:
   deploy:

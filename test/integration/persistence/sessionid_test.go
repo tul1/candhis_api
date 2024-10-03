@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tul1/candhis_api/internal/application/model"
+	"github.com/tul1/candhis_api/internal/application/model/modeltest"
 	"github.com/tul1/candhis_api/internal/application/repository"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence/persistencetest"
@@ -28,33 +27,24 @@ func TestSessionIDRepository_Get_NotFound(t *testing.T) {
 func TestSessionIDRepository_Get_Success(t *testing.T) {
 	persistor, sessionIDRepository := setupSessionIDTest(t)
 
-	createdAt := time.Now().Truncate(time.Second).UTC()
-	sessionID := &model.CandhisSessionID{
-		ID:        "test-session-id",
-		CreatedAt: createdAt,
-	}
-
 	// Add session ID to the database using the persistor
-	persistor.SessionID().Add(sessionID)
+	sessionID := modeltest.MustCreateCandhisSessionID(t, "some-session-id")
+	persistor.SessionID().Add(&sessionID)
 
 	// Fetch the session ID from the database
 	retrievedSessionID, err := sessionIDRepository.Get(context.Background())
 	require.NoError(t, err)
 
-	assert.Equal(t, sessionID.ID, retrievedSessionID.ID)
-	assert.Equal(t, createdAt, retrievedSessionID.CreatedAt)
+	assert.Equal(t, "some-session-id", retrievedSessionID.ID())
+	assert.Equal(t, sessionID.CreatedAt(), retrievedSessionID.CreatedAt())
 }
 
-func TestSessionIDRepository_Update_NoRowsAffected(t *testing.T) {
+func TestSessionIDRepository_Update_NotExistingCandhisSessionID(t *testing.T) {
 	_, sessionIDRepository := setupSessionIDTest(t)
 
-	sessionID := &model.CandhisSessionID{
-		ID:        "non-existing-session-id",
-		CreatedAt: time.Now(),
-	}
-
 	// Try to update a session ID that doesn't exist
-	err := sessionIDRepository.Update(context.Background(), sessionID)
+	sessionID := modeltest.MustCreateCandhisSessionID(t, "non-existing-session-id")
+	err := sessionIDRepository.Update(context.Background(), &sessionID)
 	assert.EqualError(t, err, "no session ID found to update")
 }
 
@@ -62,29 +52,20 @@ func TestSessionIDRepository_Update_Success(t *testing.T) {
 	persistor, sessionIDRepository := setupSessionIDTest(t)
 
 	// Add an initial session ID to the database
-	initialSessionID := &model.CandhisSessionID{
-		ID:        "initial-session-id",
-		CreatedAt: time.Now(),
-	}
-
-	persistor.SessionID().Add(initialSessionID)
+	initialSessionID := modeltest.MustCreateCandhisSessionID(t, "initial-session-id")
+	persistor.SessionID().Add(&initialSessionID)
 
 	// Update the session ID with new values
-	updatedSessionIDCreateAt := time.Now().Add(time.Hour).Truncate(time.Second).UTC()
-	updatedSessionID := &model.CandhisSessionID{
-		ID:        "updated-session-id",
-		CreatedAt: updatedSessionIDCreateAt,
-	}
-
-	err := sessionIDRepository.Update(context.Background(), updatedSessionID)
+	updatedSessionID := modeltest.MustCreateCandhisSessionID(t, "updated-session-id")
+	err := sessionIDRepository.Update(context.Background(), &updatedSessionID)
 	require.NoError(t, err)
 
 	// Fetch the session ID from the database and assert the updated values
 	retrievedSessionID, err := sessionIDRepository.Get(context.Background())
 	require.NoError(t, err)
 
-	assert.Equal(t, updatedSessionID.ID, retrievedSessionID.ID)
-	assert.Equal(t, updatedSessionIDCreateAt, retrievedSessionID.CreatedAt)
+	assert.Equal(t, "updated-session-id", retrievedSessionID.ID())
+	assert.Equal(t, updatedSessionID.CreatedAt(), retrievedSessionID.CreatedAt())
 }
 
 func setupSessionIDTest(t *testing.T) (*persistencetest.Persistor, repository.SessionID) {
