@@ -256,7 +256,7 @@ func main() {
 
 	// Create an HTTP client and use the session ID to scrape data
 	client := &http.Client{}
-	waveDataList, err := getTableData(client, sessionID.ID)
+	waveDataList, err := getTableData(client, sessionID.ID())
 	if err != nil {
 		log.Fatalf("Failed to get table data: %v", err)
 	}

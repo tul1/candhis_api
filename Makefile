@@ -16,6 +16,10 @@ DB_ENV_VARS=DATABASE_HOST=$(DATABASE_HOST) \
 download:
 	go mod download
 
+.PHONY: deps_test
+deps_test:
+	go install go.uber.org/mock/mockgen@v0.4.0
+
 # Infrastructure components #
 
 .PHONY: db
@@ -53,6 +57,10 @@ build-sessionid-scrapper:
 build: build-sessionid-scrapper build-campaigns-scrapper
 
 # Testing #
+
+.PHONY: generate
+generate:
+	go generate ./...
 
 .PHONY: test-unit
 test-unit:
