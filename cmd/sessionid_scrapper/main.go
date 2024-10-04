@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/tul1/candhis_api/internal/application/service"
@@ -13,6 +12,7 @@ import (
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/pkg/db"
 	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
+	"github.com/tul1/candhis_api/internal/pkg/logger"
 )
 
 func loadConfig(configFile string) (*Config, error) {
@@ -36,6 +36,7 @@ func createDBConnection(config Config) (*sql.DB, error) {
 }
 
 func main() {
+	log := logger.NewWithDefaultLogger()
 	ctx := context.Background()
 
 	// Parse the config file path from the command line arguments
@@ -45,14 +46,16 @@ func main() {
 	// Load configuration
 	config, err := loadConfig(*configFile)
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Errorf("Configuration error: %v", err)
+		return
 	}
 
 	// Create cConnect to the PostgreSQL database
 	db, err := createDBConnection(*config)
 	defer db.Close()
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Errorf("Database connection error: %v", err)
+		return
 	}
 
 	// Create candhisScraper
@@ -64,11 +67,12 @@ func main() {
 		client.NewScrapingBeeClient(&httpClient, config.ScrapingbeeAPIKey),
 	)
 
-	// Retrieve and Store CandhisSessionID in db
-	log.Print("Start to retrieve from Candhis web and store candhisSessionID to DB")
+	// Retrieve and Store CandhisSessionID
+	log.Info("Start to retrieve from Candhis web and store candhisSessionID to DB")
 	err = candhisScraper.RetrieveAndStoreCandhisSessionID(ctx)
 	if err != nil {
-		log.Fatalf("failed retrieve candhis session ID: %v", err)
+		log.Errorf("Failed to retrieve candhis session ID: %v", err)
+		return
 	}
-	log.Print("Finished to retrieve from Candhis web and store candhisSessionID to DB: Successfully")
+	log.Info("Finished retrieving from Candhis web and storing candhisSessionID to DB: Successfully")
 }

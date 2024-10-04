@@ -44,6 +44,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.15.0
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/jackc/pgx/v5 v5.7.1
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/mock v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
