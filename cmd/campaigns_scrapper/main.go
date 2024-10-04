@@ -126,7 +126,7 @@ func getTableData(client *http.Client, phpsessid string) ([]WaveData, error) {
 	var waveDataList []WaveData
 
 	reqURL := candhisURL
-	req, err := http.NewRequest(http.MethodGet, candhisURL, nil)
+	req, err := http.NewRequest(http.MethodGet, candhisURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request, url: %s, error: %w", reqURL, err)
 	}

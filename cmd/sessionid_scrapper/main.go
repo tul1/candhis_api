@@ -27,12 +27,12 @@ func loadConfig(configFile string) (*Config, error) {
 func createDBConnection(config Config) (*sql.DB, error) {
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.DBUser, config.DBPassword, config.DBHost, config.DBPort, config.DBName)
 
-	db, err := db.NewDatabaseConnection(dbURL)
+	dbConn, err := db.NewDatabaseConnection(dbURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to PostgreSQL: %w", err)
 	}
 
-	return db, nil
+	return dbConn, nil
 }
 
 func main() {
@@ -51,8 +51,14 @@ func main() {
 	}
 
 	// Create cConnect to the PostgreSQL database
-	db, err := createDBConnection(*config)
-	defer db.Close()
+	dbConn, err := createDBConnection(*config)
+	defer func() {
+		err = dbConn.Close()
+		if err != nil {
+			log.Errorf("Failed closing database: %v", err)
+			return
+		}
+	}()
 	if err != nil {
 		log.Errorf("Database connection error: %v", err)
 		return
@@ -63,7 +69,7 @@ func main() {
 	defer httpClient.CloseIdleConnections()
 
 	candhisScraper := service.NewCandhisScraper(
-		persistence.NewSessionIDRepository(db),
+		persistence.NewSessionIDRepository(dbConn),
 		client.NewScrapingBeeClient(&httpClient, config.ScrapingbeeAPIKey),
 	)
 

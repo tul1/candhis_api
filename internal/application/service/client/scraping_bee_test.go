@@ -21,9 +21,9 @@ func TestGetCandhisSessionID_Success(t *testing.T) {
 		}
 	}
 
-	client := setupMockScrapingBeeClient(t, mockHandler)
+	scrapingBeeClientClient := setupMockScrapingBeeClient(t, mockHandler)
 
-	sessionID, err := client.GetCandhisSessionID()
+	sessionID, err := scrapingBeeClientClient.GetCandhisSessionID()
 	assert.NoError(t, err)
 	assert.Equal(t, "valid-session-id", sessionID.ID())
 	assert.NotNil(t, sessionID.CreatedAt())
@@ -36,9 +36,9 @@ func TestGetCandhisSessionID_NoCookie(t *testing.T) {
 		}
 	}
 
-	client := setupMockScrapingBeeClient(t, mockHandler)
+	scrapingBeeClientClient := setupMockScrapingBeeClient(t, mockHandler)
 
-	_, err := client.GetCandhisSessionID()
+	_, err := scrapingBeeClientClient.GetCandhisSessionID()
 	assert.ErrorContains(t, err, "failed to retrieve cookie PHPSESSID, url:")
 }
 
@@ -50,9 +50,9 @@ func TestGetCandhisSessionID_RequestError(t *testing.T) {
 		}
 	}
 
-	client := setupMockScrapingBeeClient(t, mockHandler)
+	scrapingBeeClient := setupMockScrapingBeeClient(t, mockHandler)
 
-	_, err := client.GetCandhisSessionID()
+	_, err := scrapingBeeClient.GetCandhisSessionID()
 	assert.ErrorContains(t, err,
 		`error response from server, status: 500, response: {"message": "Internal Server Error"}, url: `)
 }

@@ -62,5 +62,4 @@ func setupCandhisScrapperAndMocks(t *testing.T) (testingMocks, service.CandhisSc
 
 	return testingMocks{mockSessionIDRepo, mockScrapingBeeClient},
 		service.NewCandhisScraper(mockSessionIDRepo, mockScrapingBeeClient)
-
 }

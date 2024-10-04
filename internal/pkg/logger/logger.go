@@ -138,5 +138,5 @@ func NewFieldsFromContext(ctx context.Context) Fields {
 func ContextWithFields(ctx context.Context, fields Fields) context.Context {
 	currentFields := NewFieldsFromContext(ctx)
 	mergedFields := currentFields.Merge(fields)
-	return context.WithValue(ctx, "logFields", mergedFields)
+	return context.WithValue(ctx, "logFields", mergedFields) //nolint: staticcheck
 }
