@@ -1,0 +1,126 @@
+linters-settings:
+  gofumpt:
+    # Choose whether to use the extra rules.
+    # Default: false
+    extra-rules: true
+
+  funlen:
+    lines: 100
+    statements: 50
+  gocritic:
+    settings:
+      hugeParam:
+        sizeThreshold: 512
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - wrapperFunc
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - sloppyReassign
+      - singleCaseSwitch
+      - unnamedResult
+      - captLocal
+  gocyclo:
+    min-complexity: 15
+  goimports:
+    local-prefixes: github.com/golangci/golangci-lint
+  govet:
+    enable:
+      - shadow
+    settings:
+      printf:
+        funcs:
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+  lll:
+    line-length: 140
+  misspell:
+    locale: US
+  nolintlint:
+    allow-unused: false # report any unused nolint directives
+    require-explanation: false # don't require an explanation for nolint directives
+    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+  godot:
+    exclude:
+      - '@+'
+  revive:
+    severity: warning
+    confidence: 0.8
+  depguard:
+    rules:
+      prevent_modeltest_in_model:
+        files:
+          - "**/internal/domain/model/*.go"
+        deny:
+          - pkg: "stash.ovh.net/nsapi/borderapi/internal/domain/model/modeltest"
+            desc: "prevent modeltest in model test file"
+      prevent_openapi_in_tests:
+        files:
+          - "**/cmd/borderapi/restapi/*_test.go"
+          - "**/test/integration/**"
+        deny:
+          - pkg: "stash.ovh.net/nsapi/borderapi/cmd/borderapi/restapi/openapi"
+            desc: "openapi generated files must not be used in unit and integration tests"
+
+linters:
+  # please, do not use `enable-all`: it's deprecated and will be removed soon.
+  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
+  disable-all: true
+  enable:
+    - bodyclose
+    - dogsled
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - funlen
+    - gochecknoinits
+    - gocritic
+    - gocyclo
+    - gofmt
+    - gofumpt
+    - goimports
+    - revive
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - nolintlint
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
+    - godot
+    - prealloc
+    - testpackage
+    - unparam
+    - asciicheck
+    - thelper
+    - depguard
+
+issues:
+  exclude-rules:
+    - text: 'shadow: declaration of "(err)" shadows declaration at'
+      linters:
+        - govet
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-dirs:
+    - bin/
+    - infra/
+    - test/
+    - sandbox/
+    - conf/
