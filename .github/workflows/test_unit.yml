@@ -9,34 +9,25 @@ on:
 
 jobs:
   unit_tests:
-    name: Run unit tests
+    name: Run unit tests and SonarCloud analysis
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v4
       with:
         go-version: 1.23
 
-    - name: Unit test
+    - name: Run unit tests
       run: make download deps_test test-unit
-
-    - name: Upload coverage to SonarCloud
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: |
-        sonar-scanner \
-        -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-        -Dsonar.organization=${{ secrets.SONAR_ORG }} \
-        -Dsonar.host.url=https://sonarcloud.io \
-        -Dsonar.go.coverage.reportPaths=cover.out
 
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@v1
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
-        projectBaseDir: .
         args: >
           -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
           -Dsonar.organization=${{ secrets.SONAR_ORG }}
+          -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.go.coverage.reportPaths=cover.out
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
