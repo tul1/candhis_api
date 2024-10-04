@@ -41,9 +41,3 @@ func (c CandhisSessionID) PHPSESSID() string {
 func (c CandhisSessionID) CreatedAt() time.Time {
 	return c.createdAt
 }
-
-// func (c CandhisSessionID) Value() (driver.Value, error) {
-// 	// For the time.Time field, there’s no need to manually implement the Value() method because time.Time is natively supported by Go's SQL driver.
-// 	// So, we don't need to add createdAt to this method.
-// 	return c.id, nil
-// }

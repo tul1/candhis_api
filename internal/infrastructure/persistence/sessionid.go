@@ -12,17 +12,17 @@ import (
 )
 
 type sessionIDRepository struct {
-	db *sql.DB
+	dbConn *sql.DB
 }
 
-func NewSessionIDRepository(db *sql.DB) *sessionIDRepository {
+func NewSessionIDRepository(dbConn *sql.DB) *sessionIDRepository {
 	return &sessionIDRepository{
-		db: db,
+		dbConn: dbConn,
 	}
 }
 
 func (r *sessionIDRepository) Get(ctx context.Context) (*model.CandhisSessionID, error) {
-	row := r.db.QueryRowContext(ctx, `SELECT id, created_at FROM candhis_session`)
+	row := r.dbConn.QueryRowContext(ctx, `SELECT id, created_at FROM candhis_session`)
 
 	var id string
 	var createdAt time.Time
@@ -45,7 +45,7 @@ func (r *sessionIDRepository) Get(ctx context.Context) (*model.CandhisSessionID,
 }
 
 func (r *sessionIDRepository) Update(ctx context.Context, sessionID *model.CandhisSessionID) error {
-	return db.Transaction(ctx, r.db, func(tx *sql.Tx) error {
+	return db.Transaction(ctx, r.dbConn, func(tx *sql.Tx) error {
 		query := `UPDATE candhis_session SET id = $1, created_at = $2`
 		result, err := tx.ExecContext(ctx, query, sessionID.ID(), sessionID.CreatedAt())
 		if err != nil {

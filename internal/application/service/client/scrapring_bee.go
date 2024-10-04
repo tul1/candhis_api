@@ -34,7 +34,7 @@ func (s *scrapingBeeClient) GetCandhisSessionID() (model.CandhisSessionID, error
 	params.Add("js_scenario", scrapingbeeJSScenario)
 
 	reqURL := fmt.Sprintf("%s?%s", scrapingbeeURL, params.Encode())
-	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+	req, err := http.NewRequest(http.MethodGet, reqURL, http.NoBody)
 	if err != nil {
 		return model.CandhisSessionID{}, fmt.Errorf("failed to create request, url: %s, error: %w", reqURL, err)
 	}
@@ -45,20 +45,29 @@ func (s *scrapingBeeClient) GetCandhisSessionID() (model.CandhisSessionID, error
 	}
 
 	resp, err := s.client.Do(req)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			return
+		}
+	}()
 	if err != nil {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return model.CandhisSessionID{}, fmt.Errorf("failed to read error response body, status: %d, error: %w, url: %s", resp.StatusCode, err, reqURL)
+			return model.CandhisSessionID{},
+				fmt.Errorf("failed to read error response body, status: %d, error: %w, url: %s", resp.StatusCode, err, reqURL)
 		}
-		return model.CandhisSessionID{}, fmt.Errorf("error response from server, status: %d, response: %s, url: %s", resp.StatusCode, string(body), reqURL)
+		return model.CandhisSessionID{},
+			fmt.Errorf("error response from server, status: %d, response: %s, url: %s", resp.StatusCode, string(body), reqURL)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return model.CandhisSessionID{}, fmt.Errorf("failed to read error response body, status: %d, error: %w, url: %s", resp.StatusCode, err, reqURL)
+			return model.CandhisSessionID{},
+				fmt.Errorf("failed to read error response body, status: %d, error: %w, url: %s", resp.StatusCode, err, reqURL)
 		}
-		return model.CandhisSessionID{}, fmt.Errorf("error response from server, status: %d, response: %s, url: %s", resp.StatusCode, string(body), reqURL)
+		return model.CandhisSessionID{},
+			fmt.Errorf("error response from server, status: %d, response: %s, url: %s", resp.StatusCode, string(body), reqURL)
 	}
 
 	cookies := resp.Header["Set-Cookie"]

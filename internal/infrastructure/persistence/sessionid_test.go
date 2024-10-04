@@ -101,6 +101,8 @@ func TestSessionIDRepository_Update_Success(t *testing.T) {
 }
 
 func setupSessionIDSQLMock(t *testing.T) (repository.SessionID, sqlmock.Sqlmock) {
+	t.Helper()
+
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 

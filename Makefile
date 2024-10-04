@@ -20,6 +20,10 @@ download:
 deps_test:
 	go install go.uber.org/mock/mockgen@v0.4.0
 
+.PHONY: deps_lint
+deps_lint:
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
+
 # Infrastructure components #
 
 .PHONY: db
@@ -64,7 +68,6 @@ generate:
 
 .PHONY: lint
 lint:
-	golangci-lint config verify
 	golangci-lint run --timeout 15m0s --config .golangci.yml
 
 .PHONY: test-unit
@@ -78,6 +81,10 @@ test-integration:
 	$(DB_ENV_VARS) go test -timeout=15s -count=1 -p 1 ./test/integration/...
 
 # Cleaning #
+
+.PHONY: format
+format:
+	golangci-lint run --config .golangci.yml --fix
 
 .PHONY: stop
 stop:
