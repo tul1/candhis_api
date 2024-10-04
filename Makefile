@@ -62,6 +62,11 @@ build: build-sessionid-scrapper build-campaigns-scrapper
 generate:
 	go generate ./...
 
+.PHONY: lint
+lint:
+	golangci-lint config verify
+	golangci-lint run --timeout 15m0s --config .golangci.yml
+
 .PHONY: test-unit
 test-unit:
 	go clean -testcache
