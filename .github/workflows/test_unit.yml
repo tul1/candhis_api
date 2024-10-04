@@ -1,11 +1,16 @@
-name: unit tests
+name: Unit tests
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "*" ]
   workflow_call:
+    secrets:
+      SONAR_PROJECT_KEY:
+        required: true
+      SONAR_ORG:
+        required: true
+      SONAR_TOKEN:
+        required: true
 
 jobs:
   unit_tests:
@@ -14,7 +19,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-go@v4
+    
+    - name: Setup Go environment
+      uses: actions/setup-go@v4
       with:
         go-version: 1.23
 

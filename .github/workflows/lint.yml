@@ -1,8 +1,6 @@
 name: Go Lint
 
 on:
-    push:
-      branches: [ "main" ]
     pull_request:
       branches: [ "*" ]
     workflow_call:  
@@ -13,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v4
         with:
           go-version: 1.23 
 
