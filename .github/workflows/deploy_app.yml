@@ -6,7 +6,17 @@ on:
       - main
 
 jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  test_unit:
+    uses: ./.github/workflows/test_unit.yml
+
+  test_integration:
+    uses: ./.github/workflows/test_integration.yml
+
   deploy:
+    needs: [lint, test_unit, test_integration]
     runs-on: ubuntu-latest
 
     steps:
