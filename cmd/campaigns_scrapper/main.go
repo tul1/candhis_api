@@ -1,20 +1,22 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/tul1/candhis_api/internal/domain/model"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/pkg/db"
 	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
@@ -25,105 +27,22 @@ const (
 	elasticSearchIndexLesPierresNoires = "les-pierres-noires"
 )
 
-type WaveData struct {
-	Date        string  `json:"date"`
-	Time        string  `json:"time"`
-	H1_3        float64 `json:"h1_3"`
-	Hmax        float64 `json:"hmax"`
-	Th1_3       float64 `json:"th1_3"`
-	DirPeak     int     `json:"dir_peak"`
-	EtalPic     int     `json:"etal_pic"`
-	Temperature float64 `json:"temperature"`
-}
-
-func validateWaveData(waveData WaveData) error {
-	if waveData.Date == "" || waveData.Time == "" || waveData.H1_3 == 0 || waveData.Hmax == 0 || waveData.Th1_3 == 0 || waveData.DirPeak == 0 || waveData.EtalPic == 0 || waveData.Temperature == 0 {
-		return errors.New("one or more required fields are missing or have invalid values")
-	}
-	return nil
-}
-
-func parseRow(cells *goquery.Selection) (WaveData, error) {
-	var waveData WaveData
-	cellCount := cells.Length()
-
-	if cellCount != 8 {
-		return waveData, fmt.Errorf("expected 8 cells, but got %d", cellCount)
+func parseRow(cells *goquery.Selection) (model.WaveData, error) {
+	if cells.Length() != 8 {
+		return model.WaveData{}, fmt.Errorf("expected 8 cells, but got %d", cells.Length())
 	}
 
-	fieldMap := map[int]func(string) error{
-		0: func(val string) error { waveData.Date = val; return nil },
-		1: func(val string) error { waveData.Time = val; return nil },
-		2: func(val string) error {
-			v, err := strconv.ParseFloat(val, 64)
-			if err != nil {
-				return err
-			}
-			waveData.H1_3 = v
-			return nil
-		},
-		3: func(val string) error {
-			v, err := strconv.ParseFloat(val, 64)
-			if err != nil {
-				return err
-			}
-			waveData.Hmax = v
-			return nil
-		},
-		4: func(val string) error {
-			v, err := strconv.ParseFloat(val, 64)
-			if err != nil {
-				return err
-			}
-			waveData.Th1_3 = v
-			return nil
-		},
-		5: func(val string) error {
-			v, err := strconv.Atoi(val)
-			if err != nil {
-				return err
-			}
-			waveData.DirPeak = v
-			return nil
-		},
-		6: func(val string) error {
-			v, err := strconv.Atoi(val)
-			if err != nil {
-				return err
-			}
-			waveData.EtalPic = v
-			return nil
-		},
-		7: func(val string) error {
-			v, err := strconv.ParseFloat(val, 64)
-			if err != nil {
-				return err
-			}
-			waveData.Temperature = v
-			return nil
-		},
-	}
-
+	values := make([]string, 8)
 	cells.Each(func(cellIndex int, cell *goquery.Selection) {
-		cellText := strings.TrimSpace(cell.Text())
-
-		if parseFunc, ok := fieldMap[cellIndex]; ok {
-			if err := parseFunc(cellText); err != nil {
-				log.Printf("Failed to parse value for cell %d: %v", cellIndex, err)
-			}
-		}
+		values[cellIndex] = strings.TrimSpace(cell.Text())
 	})
 
-	// Validate the parsed data
-	if err := validateWaveData(waveData); err != nil {
-		return waveData, err
-	}
-
-	return waveData, nil
+	return model.NewWaveData(values[0], values[1], values[2], values[3],
+		values[4], values[5], values[6], values[7])
 }
 
-func getTableData(client *http.Client, phpsessid string) ([]WaveData, error) {
-	var waveDataList []WaveData
+func getTableData(client *http.Client, phpsessid string) ([]model.WaveData, error) {
+	var waveDataList []model.WaveData
 
 	reqURL := candhisURL
 	req, err := http.NewRequest(http.MethodGet, candhisURL, http.NoBody)
@@ -145,17 +64,14 @@ func getTableData(client *http.Client, phpsessid string) ([]WaveData, error) {
 		return nil, fmt.Errorf("failed parse HTML: %w", err)
 	}
 
-	// Parse the table data
 	doc.Find("table.table-striped.table-bordered.table-sm").Each(func(index int, table *goquery.Selection) {
 		table.Find("tr").Each(func(rowIndex int, row *goquery.Selection) {
-			// Parse each row of cells into WaveData
 			waveData, err := parseRow(row.Find("td"))
 			if err != nil {
 				log.Printf("Skipping row due to error: %v", err)
 				return
 			}
 
-			// Add the valid wave data to the list
 			waveDataList = append(waveDataList, waveData)
 		})
 	})
@@ -163,12 +79,7 @@ func getTableData(client *http.Client, phpsessid string) ([]WaveData, error) {
 	return waveDataList, nil
 }
 
-func sanitizeDocumentID(date, time string) string {
-	// Replace slashes with hyphens in the date and concatenate with time
-	return strings.ReplaceAll(date, "/", "-") + "-" + time
-}
-
-func pushWaveDataToES(waveDataList []WaveData) error {
+func pushWaveDataToES(waveDataList []model.WaveData) error {
 	// Initialize Elasticsearch client
 	es, err := elasticsearch.NewDefaultClient()
 	if err != nil {
@@ -183,14 +94,14 @@ func pushWaveDataToES(waveDataList []WaveData) error {
 			continue
 		}
 
-		// Sanitize the DocumentID
-		documentID := sanitizeDocumentID(waveData.Date, waveData.Time)
+		// Use the RFC3339 formatted timestamp as the DocumentID
+		documentID := waveData.Timestamp().Format(time.RFC3339)
 
 		// Prepare the request to index the data
 		req := esapi.IndexRequest{
 			Index:      elasticSearchIndexLesPierresNoires,
 			DocumentID: documentID,
-			Body:       strings.NewReader(string(dataJSON)),
+			Body:       bytes.NewReader(dataJSON),
 			Refresh:    "true",
 		}
 
@@ -214,13 +125,24 @@ func pushWaveDataToES(waveDataList []WaveData) error {
 	return nil
 }
 
-func loadConfig(configFile string) Config {
-	var config Config
-	err := loadconfig.LoadConfig(configFile, &config)
+func loadConfig(configFile string) (*Config, error) {
+	var config *Config
+	err := loadconfig.LoadConfig(configFile, config)
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
-	return config
+	return config, nil
+}
+
+func createDBConnection(config Config) (*sql.DB, error) {
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.DBUser, config.DBPassword, config.DBHost, config.DBPort, config.DBName)
+
+	dbConn, err := db.NewDatabaseConnection(dbURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to PostgreSQL: %w", err)
+	}
+
+	return dbConn, nil
 }
 
 func main() {
@@ -231,24 +153,27 @@ func main() {
 	flag.Parse()
 
 	// Load configuration
-	config := loadConfig(*configFile)
-
-	// Connect to the PostgreSQL database
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		config.DBUser,
-		config.DBPassword,
-		config.DBHost,
-		config.DBPort,
-		config.DBName)
-
-	db, err := db.NewDatabaseConnection(dbURL)
+	config, err := loadConfig(*configFile)
 	if err != nil {
-		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+		// log.Errorf("Configuration error: %v", err)
+		return
 	}
-	defer db.Close()
 
+	// Create cConnect to the PostgreSQL database
+	dbConn, err := createDBConnection(*config)
+	defer func() {
+		err = dbConn.Close()
+		if err != nil {
+			// log.Errorf("Failed closing database: %v", err)
+			return
+		}
+	}()
+	if err != nil {
+		// log.Errorf("Database connection error: %v", err)
+		return
+	}
 	// Retrieve the latest session ID from the database
-	sessionIDRepo := persistence.NewSessionIDRepository(db)
+	sessionIDRepo := persistence.NewSessionIDRepository(dbConn)
 	sessionID, err := sessionIDRepo.Get(ctx)
 	if err != nil {
 		log.Fatalf("Failed to retrieve session ID: %v", err)

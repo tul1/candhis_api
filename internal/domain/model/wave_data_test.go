@@ -11,7 +11,8 @@ import (
 )
 
 func TestNewWaveDataSuccess(t *testing.T) {
-	waveData, err := model.NewWaveData("07/10/2024", "14:00", 2.5, 4.0, 10.5, 90, 30, 20.0)
+	// Using string inputs for date, time, and numerical fields
+	waveData, err := model.NewWaveData("07/10/2024", "14:00", "2.5", "4.0", "10.5", "90", "30", "20.0")
 	require.NoError(t, err)
 
 	expectedTimestamp, err := time.Parse(time.RFC3339, "2024-10-07T14:00:00Z")
@@ -26,93 +27,149 @@ func TestNewWaveDataSuccess(t *testing.T) {
 	assert.Equal(t, 20.0, waveData.Temperature())
 }
 
+//nolint:funlen
 func TestNewWaveDataFailure(t *testing.T) {
 	testCases := map[string]struct {
-		date                      string
+		dateStr                   string
 		timeStr                   string
-		averageTopThirdWaveHeight float64
-		maxHeight                 float64
-		averageTopThirdWavePeriod float64
-		peakDirection             int
-		peakDirectionalSpread     int
-		temperature               float64
+		averageTopThirdWaveHeight string
+		maxHeight                 string
+		averageTopThirdWavePeriod string
+		peakDirection             string
+		peakDirectionalSpread     string
+		temperature               string
 		errMsg                    string
 	}{
+		"missing date": {
+			dateStr:                   "", // empty date
+			timeStr:                   "14:00",
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
+			errMsg:                    "invalid date or time format, expected DD/MM/YYYY and HH:MM",
+		},
 		"invalid date format YYYY/MM/DD": {
-			date:                      "2024/10/07", // Invalid format
+			dateStr:                   "2024/10/07", // Invalid format
 			timeStr:                   "14:00",
-			averageTopThirdWaveHeight: 2.5,
-			maxHeight:                 4.0,
-			averageTopThirdWavePeriod: 10.5,
-			peakDirection:             90,
-			peakDirectionalSpread:     30,
-			temperature:               20.0,
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
 			errMsg:                    "invalid date or time format, expected DD/MM/YYYY and HH:MM",
 		},
-		"invalid date format DD-MM-YYYY": {
-			date:                      "07-10-2024", // Invalid format
-			timeStr:                   "14:00",
-			averageTopThirdWaveHeight: 2.5,
-			maxHeight:                 4.0,
-			averageTopThirdWavePeriod: 10.5,
-			peakDirection:             90,
-			peakDirectionalSpread:     30,
-			temperature:               20.0,
-			errMsg:                    "invalid date or time format, expected DD/MM/YYYY and HH:MM",
-		},
-		"invalid time format": {
-			date:                      "07/10/2024",
+		"invalid time format HH:MM:SS": {
+			dateStr:                   "07/10/2024",
 			timeStr:                   "14:00:00", // Invalid time format
-			averageTopThirdWaveHeight: 2.5,
-			maxHeight:                 4.0,
-			averageTopThirdWavePeriod: 10.5,
-			peakDirection:             90,
-			peakDirectionalSpread:     30,
-			temperature:               20.0,
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
 			errMsg:                    "invalid date or time format, expected DD/MM/YYYY and HH:MM",
 		},
-		"negative wave height": {
-			date:                      "07/10/2024",
+		"missing averageTopThirdWaveHeight": {
+			dateStr:                   "07/10/2024",
 			timeStr:                   "14:00",
-			averageTopThirdWaveHeight: -1.0, // Invalid: negative value
-			maxHeight:                 4.0,
-			averageTopThirdWavePeriod: 10.5,
-			peakDirection:             90,
-			peakDirectionalSpread:     30,
-			temperature:               20.0,
+			averageTopThirdWaveHeight: "", // empty height
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
+			errMsg:                    "invalid value for averageTopThirdWaveHeight",
+		},
+		"negative averageTopThirdWaveHeight": {
+			dateStr:                   "07/10/2024",
+			timeStr:                   "14:00",
+			averageTopThirdWaveHeight: "-1.0", // Invalid: negative value
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
 			errMsg:                    "invalid input: negative values for heights, periods, or temperature below absolute zero",
 		},
-		"negative max wave height": {
-			date:                      "07/10/2024",
+		"missing maxHeight": {
+			dateStr:                   "07/10/2024",
 			timeStr:                   "14:00",
-			averageTopThirdWaveHeight: 2.5,
-			maxHeight:                 -4.0, // Invalid: negative value
-			averageTopThirdWavePeriod: 10.5,
-			peakDirection:             90,
-			peakDirectionalSpread:     30,
-			temperature:               20.0,
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "", // empty max wave height
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
+			errMsg:                    "invalid value for maxHeight",
+		},
+		"negative maxHeight": {
+			dateStr:                   "07/10/2024",
+			timeStr:                   "14:00",
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "-4.0", // Invalid: negative value
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
 			errMsg:                    "invalid input: negative values for heights, periods, or temperature below absolute zero",
 		},
-		"negative wave period": {
-			date:                      "07/10/2024",
+		"missing averageTopThirdWavePeriod": {
+			dateStr:                   "07/10/2024",
 			timeStr:                   "14:00",
-			averageTopThirdWaveHeight: 2.5,
-			maxHeight:                 4.0,
-			averageTopThirdWavePeriod: -10.5, // Invalid: negative value
-			peakDirection:             90,
-			peakDirectionalSpread:     30,
-			temperature:               20.0,
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "", // empty period
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
+			errMsg:                    "invalid value for averageTopThirdWavePeriod",
+		},
+		"negative averageTopThirdWavePeriod": {
+			dateStr:                   "07/10/2024",
+			timeStr:                   "14:00",
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "-10.5", // Invalid: negative value
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
 			errMsg:                    "invalid input: negative values for heights, periods, or temperature below absolute zero",
+		},
+		"missing peakDirection": {
+			dateStr:                   "07/10/2024",
+			timeStr:                   "14:00",
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "", // empty peak direction
+			peakDirectionalSpread:     "30",
+			temperature:               "20.0",
+			errMsg:                    "invalid value for peakDirection",
+		},
+		"missing peakDirectionalSpread": {
+			dateStr:                   "07/10/2024",
+			timeStr:                   "14:00",
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "", // empty directional spread
+			temperature:               "20.0",
+			errMsg:                    "invalid value for peakDirectionalSpread",
 		},
 		"temperature below absolute zero": {
-			date:                      "07/10/2024",
+			dateStr:                   "07/10/2024",
 			timeStr:                   "14:00",
-			averageTopThirdWaveHeight: 2.5,
-			maxHeight:                 4.0,
-			averageTopThirdWavePeriod: 10.5,
-			peakDirection:             90,
-			peakDirectionalSpread:     30,
-			temperature:               -300.0, // Invalid: temperature below absolute zero
+			averageTopThirdWaveHeight: "2.5",
+			maxHeight:                 "4.0",
+			averageTopThirdWavePeriod: "10.5",
+			peakDirection:             "90",
+			peakDirectionalSpread:     "30",
+			temperature:               "-300.0", // Invalid: temperature below absolute zero
 			errMsg:                    "invalid input: negative values for heights, periods, or temperature below absolute zero",
 		},
 	}
@@ -120,8 +177,14 @@ func TestNewWaveDataFailure(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			waveData, err := model.NewWaveData(
-				tc.date, tc.timeStr, tc.averageTopThirdWaveHeight, tc.maxHeight,
-				tc.averageTopThirdWavePeriod, tc.peakDirection, tc.peakDirectionalSpread, tc.temperature,
+				tc.dateStr,
+				tc.timeStr,
+				tc.averageTopThirdWaveHeight,
+				tc.maxHeight,
+				tc.averageTopThirdWavePeriod,
+				tc.peakDirection,
+				tc.peakDirectionalSpread,
+				tc.temperature,
 			)
 			assert.EqualError(t, err, tc.errMsg)
 			assert.Equal(t, model.WaveData{}, waveData)
@@ -130,9 +193,7 @@ func TestNewWaveDataFailure(t *testing.T) {
 }
 
 func TestWaveDataMarshalJSON(t *testing.T) {
-	waveData, err := model.NewWaveData(
-		"07/10/2024", "14:00", 2.5, 4.0, 10.5, 90, 30, 20.0,
-	)
+	waveData, err := model.NewWaveData("07/10/2024", "14:00", "2.5", "4.0", "10.5", "90", "30", "20.0")
 	require.NoError(t, err)
 
 	jsonData, err := json.Marshal(waveData)

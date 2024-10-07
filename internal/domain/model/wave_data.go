@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 	"time"
 )
 
@@ -27,18 +28,45 @@ type WaveData struct {
 }
 
 func NewWaveData(
-	dateStr, timeStr string,
-	averageTopThirdWaveHeight, maxHeight, averageTopThirdWavePeriod float64,
-	peakDirection, peakDirectionalSpread int,
-	temperature float64,
+	date, timeStr, h1_3, hmax, th1_3, dirPeak, etalPic, temperature string,
 ) (WaveData, error) {
-	datetimeStr := dateStr + " " + timeStr
+	datetimeStr := date + " " + timeStr
 	timestamp, err := time.Parse("02/01/2006 15:04", datetimeStr)
 	if err != nil {
 		return WaveData{}, errors.New("invalid date or time format, expected DD/MM/YYYY and HH:MM")
 	}
 
-	if averageTopThirdWaveHeight < 0 || maxHeight < 0 || averageTopThirdWavePeriod < 0 || temperature < -273.15 {
+	averageTopThirdWaveHeight, err := strconv.ParseFloat(h1_3, 64)
+	if err != nil {
+		return WaveData{}, errors.New("invalid value for averageTopThirdWaveHeight")
+	}
+
+	maxHeight, err := strconv.ParseFloat(hmax, 64)
+	if err != nil {
+		return WaveData{}, errors.New("invalid value for maxHeight")
+	}
+
+	averageTopThirdWavePeriod, err := strconv.ParseFloat(th1_3, 64)
+	if err != nil {
+		return WaveData{}, errors.New("invalid value for averageTopThirdWavePeriod")
+	}
+
+	peakDirection, err := strconv.Atoi(dirPeak)
+	if err != nil {
+		return WaveData{}, errors.New("invalid value for peakDirection")
+	}
+
+	peakDirectionalSpread, err := strconv.Atoi(etalPic)
+	if err != nil {
+		return WaveData{}, errors.New("invalid value for peakDirectionalSpread")
+	}
+
+	temp, err := strconv.ParseFloat(temperature, 64)
+	if err != nil {
+		return WaveData{}, errors.New("invalid value for temperature")
+	}
+
+	if averageTopThirdWaveHeight < 0 || maxHeight < 0 || averageTopThirdWavePeriod < 0 || temp < -273.15 {
 		return WaveData{}, errors.New("invalid input: negative values for heights, periods, or temperature below absolute zero")
 	}
 
@@ -49,7 +77,7 @@ func NewWaveData(
 		averageTopThirdWavePeriod: averageTopThirdWavePeriod,
 		peakDirection:             peakDirection,
 		peakDirectionalSpread:     peakDirectionalSpread,
-		temperature:               temperature,
+		temperature:               temp,
 	}, nil
 }
 
