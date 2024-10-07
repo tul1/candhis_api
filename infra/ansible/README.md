@@ -1,6 +1,6 @@
 # Ansible Candhis API Full Stack Deployer
 
-This Ansible project is designed to automate the setup of the production environment for the candhis_api project. The project includes two scrapers (campaigns_scrapper and sessionid_scrapper) that are orchestrated by two systemd timers, along with an API. The playbooks in this project will configure the host, install the necessary infrastructure, and deploy the binaries required for the project.
+This Ansible project is designed to automate the setup of the production environment for the candhis_api project. The project includes two scrapers (campaigns_scraper and sessionid_scraper) that are orchestrated by two systemd timers, along with an API. The playbooks in this project will configure the host, install the necessary infrastructure, and deploy the binaries required for the project.
 
 ## Requirements
 
@@ -69,10 +69,10 @@ This playbook manages the installation of the application binaries and configura
 
 #### Steps Included:
 - Ensure the `/home/astraydev/candhis_api/bin/` directory exists on the host.
-- Copy the `campaigns_scrapper` and `sessionid_scrapper` binaries to the `/home/astraydev/candhis_api/bin/` directory.
+- Copy the `campaigns_scraper` and `sessionid_scraper` binaries to the `/home/astraydev/candhis_api/bin/` directory.
 - Ensure the `/home/astraydev/candhis_api/config/` directory exists on the host.
 - Copy the app configuration files from the `config/` directory to `/home/astraydev/candhis_api/config/`.
-- Set up and manage systemd services and timers for `campaigns_scrapper` and `sessionid_scrapper`.
+- Set up and manage systemd services and timers for `campaigns_scraper` and `sessionid_scraper`.
 
 #### How to Run:
 

@@ -18,11 +18,19 @@ jobs:
             services: |
                 postgres
                 migrate
+                elasticsearch
 
         - name: Setup Go environment
           uses: actions/setup-go@v5
           with:
             go-version: 1.23
-    
+        
+        - name: Wait for Elasticsearch to be ready
+          run: |
+            until curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"'; do
+              echo "Waiting for Elasticsearch..."
+              sleep 5
+            done
+
         - name: Integration tests
           run: make download test-integration

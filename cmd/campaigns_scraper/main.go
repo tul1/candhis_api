@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/tul1/candhis_api/internal/application/service"
-	"github.com/tul1/candhis_api/internal/application/service/client"
+	"github.com/tul1/candhis_api/internal/infrastructure/client"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/pkg/db"
 	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
@@ -17,8 +18,7 @@ import (
 
 func loadConfig(configFile string) (*Config, error) {
 	var config *Config
-	err := loadconfig.LoadConfig(configFile, config)
-	if err != nil {
+	if err := loadconfig.LoadConfig(configFile, config); err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 	return config, nil
@@ -53,8 +53,7 @@ func main() {
 	// Create cConnect to the PostgreSQL database
 	dbConn, err := createDBConnection(*config)
 	defer func() {
-		err = dbConn.Close()
-		if err != nil {
+		if err = dbConn.Close(); err != nil {
 			log.Errorf("Failed closing database: %v", err)
 			return
 		}
@@ -64,21 +63,29 @@ func main() {
 		return
 	}
 
-	// Create candhisScraper
+	// Create candhis scraper service
 	httpClient := http.Client{}
 	defer httpClient.CloseIdleConnections()
 
-	candhisScraper := service.NewCandhisScraper(
-		persistence.NewSessionIDRepository(dbConn),
-		client.NewScrapingBeeClient(&httpClient, config.ScrapingbeeAPIKey),
-	)
-
-	// Retrieve and Store CandhisSessionID
-	log.Info("Start to retrieve from Candhis web and store candhisSessionID to DB")
-	err = candhisScraper.RetrieveAndStoreCandhisSessionID(ctx)
+	esClient, err := elasticsearch.NewClient(elasticsearch.Config{Addresses: []string{config.ElasticsearchURL}})
 	if err != nil {
-		log.Errorf("Failed to retrieve candhis session ID: %v", err)
+		log.Errorf("Failed to create Elasticsearch client: %v", err)
 		return
 	}
-	log.Info("Finished retrieving from Candhis web and storing candhisSessionID to DB: Successfully")
+
+	candhisScraper := service.NewCandhisScraper(
+		persistence.NewSessionID(dbConn),
+		persistence.NewWaveData(esClient),
+		nil,
+		client.NewCandhisWebScraper(&httpClient),
+	)
+
+	// Scraping and store campaigns from Candhis web
+	log.Info("Start scraping Candhis web campaigns")
+	err = candhisScraper.ScrapingCandhisCampaigns(ctx)
+	if err != nil {
+		log.Errorf("Failed while scraping Candhis web campaigns: %v", err)
+		return
+	}
+	log.Info("Finished scraping Candhis web campaigns Successfully")
 }

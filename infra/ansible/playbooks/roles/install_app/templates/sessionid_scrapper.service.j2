@@ -1,12 +1,12 @@
 [Unit]
-Description=Run the sessionid_scrapper binary
+Description=Run the sessionid_scraper binary
 After=network.target
 
 [Service]
 Type=oneshot
 WorkingDirectory=/home/astraydev/candhis_api/bin
-ExecStart=/home/astraydev/candhis_api/bin/sessionid_scrapper -config /home/astraydev/candhis_api/conf/sessionid_scrapper.yml
-SyslogIdentifier=sessionid_scrapper
+ExecStart=/home/astraydev/candhis_api/bin/sessionid_scraper -config /home/astraydev/candhis_api/conf/sessionid_scraper.yml
+SyslogIdentifier=sessionid_scraper
 
 [Install]
 WantedBy=multi-user.target
