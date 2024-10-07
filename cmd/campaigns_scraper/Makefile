@@ -1,5 +1,5 @@
 BINDIR=../../bin
-APPNAME ?= campaigns_scrapper
+APPNAME ?= campaigns_scraper
 DEST = $(BINDIR)/$(APPNAME)
 GO=GOOS=linux CGO_ENABLED=0
 

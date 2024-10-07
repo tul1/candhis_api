@@ -123,4 +123,3 @@ issues:
     - test/
     - sandbox/
     - conf/
-    - cmd/campaigns_scrapper

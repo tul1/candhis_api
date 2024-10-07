@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tul1/candhis_api/internal/application/repository"
-	"github.com/tul1/candhis_api/internal/application/service/client"
+	"github.com/tul1/candhis_api/internal/infrastructure/client"
 )
 
 func TestGetCandhisSessionID_Success(t *testing.T) {
@@ -55,14 +55,6 @@ func TestGetCandhisSessionID_RequestError(t *testing.T) {
 	_, err := scrapingBeeClient.GetCandhisSessionID()
 	assert.ErrorContains(t, err,
 		`error response from server, status: 500, response: {"message": "Internal Server Error"}, url: `)
-}
-
-type mockRoundTripper struct {
-	mockHandler func(req *http.Request) *http.Response
-}
-
-func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	return m.mockHandler(req), nil
 }
 
 func setupMockScrapingBeeClient(t *testing.T, mockHandler func(req *http.Request) *http.Response) repository.ScrapingBeeClient {

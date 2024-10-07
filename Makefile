@@ -10,6 +10,11 @@ DB_ENV_VARS=DATABASE_HOST=$(DATABASE_HOST) \
             DATABASE_PASSWORD=$(DATABASE_PASSWORD) \
             DATABASE_NAME=$(DATABASE_NAME)
 
+ELASTICSEARCH_HOST=localhost
+ELASTICSEARCH_PORT=9200
+ELASTICSEARCH_URL=ELASTICSEARCH_URL=http://$(ELASTICSEARCH_HOST):$(ELASTICSEARCH_PORT)
+
+
 # Downloding dependencies #
 
 .PHONY: download
@@ -47,18 +52,18 @@ run-infra: db elasticsearch logs_stack
 
 # Building apps #
 
-.PHONY: build-campaigns-scrapper
-build-campaigns-scrapper:
-	@echo "Building the campaigns_scrapper binary"
-	@cd cmd/campaigns_scrapper && $(MAKE) build --no-print-directory
+.PHONY: build-campaigns-scraper
+build-campaigns-scraper:
+	@echo "Building the campaigns_scraper binary"
+	@cd cmd/campaigns_scraper && $(MAKE) build --no-print-directory
 
-.PHONY: build-sessionid-scrapper
-build-sessionid-scrapper:
-	@echo "Building the sessionid_scrapper binary"
-	@cd cmd/sessionid_scrapper && $(MAKE) build --no-print-directory
+.PHONY: build-sessionid-scraper
+build-sessionid-scraper:
+	@echo "Building the sessionid_scraper binary"
+	@cd cmd/sessionid_scraper && $(MAKE) build --no-print-directory
 
 .PHONY: build
-build: build-sessionid-scrapper build-campaigns-scrapper
+build: build-sessionid-scraper build-campaigns-scraper
 
 # Testing #
 
@@ -78,7 +83,7 @@ test-unit:
 .PHONY: test-integration
 test-integration:
 	go clean -testcache
-	$(DB_ENV_VARS) go test -timeout=15s -count=1 -p 1 ./test/integration/...
+	$(DB_ENV_VARS) $(ELASTICSEARCH_URL) go test -timeout=15s -count=1 -p 1 ./test/integration/...
 
 # Cleaning #
 
@@ -95,3 +100,4 @@ stop:
 clean:
 	rm -rf ./bin
 	rm -f ./cover.out
+	find . -type d -name '*mock' -exec rm -rf {} +

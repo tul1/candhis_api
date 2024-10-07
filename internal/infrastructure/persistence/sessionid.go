@@ -11,17 +11,17 @@ import (
 	"github.com/tul1/candhis_api/internal/pkg/db"
 )
 
-type sessionIDRepository struct {
+type sessionID struct {
 	dbConn *sql.DB
 }
 
-func NewSessionIDRepository(dbConn *sql.DB) *sessionIDRepository {
-	return &sessionIDRepository{
+func NewSessionID(dbConn *sql.DB) *sessionID {
+	return &sessionID{
 		dbConn: dbConn,
 	}
 }
 
-func (r *sessionIDRepository) Get(ctx context.Context) (*model.CandhisSessionID, error) {
+func (r *sessionID) Get(ctx context.Context) (*model.CandhisSessionID, error) {
 	row := r.dbConn.QueryRowContext(ctx, `SELECT id, created_at FROM candhis_session`)
 
 	var id string
@@ -44,7 +44,7 @@ func (r *sessionIDRepository) Get(ctx context.Context) (*model.CandhisSessionID,
 	return &candhisSessionID, nil
 }
 
-func (r *sessionIDRepository) Update(ctx context.Context, sessionID *model.CandhisSessionID) error {
+func (r *sessionID) Update(ctx context.Context, sessionID model.CandhisSessionID) error {
 	return db.Transaction(ctx, r.dbConn, func(tx *sql.Tx) error {
 		query := `UPDATE candhis_session SET id = $1, created_at = $2`
 		result, err := tx.ExecContext(ctx, query, sessionID.ID(), sessionID.CreatedAt())

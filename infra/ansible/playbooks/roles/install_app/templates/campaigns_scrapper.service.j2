@@ -1,12 +1,12 @@
 [Unit]
-Description=Run the campaigns_scrapper binary
+Description=Run the campaigns_scraper binary
 After=network.target
 
 [Service]
 Type=oneshot
 WorkingDirectory=/home/astraydev/candhis_api/bin
-ExecStart=/home/astraydev/candhis_api/bin/campaigns_scrapper -config /home/astraydev/candhis_api/conf/campaigns_scrapper.yml
-SyslogIdentifier=campaigns_scrapper
+ExecStart=/home/astraydev/candhis_api/bin/campaigns_scraper -config /home/astraydev/candhis_api/conf/campaigns_scraper.yml
+SyslogIdentifier=campaigns_scraper
 
 [Install]
 WantedBy=multi-user.target

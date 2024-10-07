@@ -17,10 +17,6 @@ jobs:
         with:
           go-version: 1.23 
 
-      - name: Install golangci-lint
-        run: |
-          make deps_lint
-
       - name: Run golangci-lint
         run: |
-          make lint
+          make deps_test generate deps_lint lint
