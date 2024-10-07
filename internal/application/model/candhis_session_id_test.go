@@ -87,12 +87,3 @@ func TestCandhisSessionIDGetters(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, sessionIDWithDefaultTime.CreatedAt())
 }
-
-// func TestCandhisSessionID_Value_Success(t *testing.T) {
-// 	sessionID, err := model.NewCandhisSessionID("validSessionID123", nil)
-// 	require.NoError(t, err)
-
-// 	val, err := sessionID.Value()
-// 	require.NoError(t, err)
-// 	assert.Equal(t, driver.Value("validSessionID123"), val)
-// }
