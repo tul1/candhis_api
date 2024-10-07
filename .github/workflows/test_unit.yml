@@ -4,6 +4,13 @@ on:
   pull_request:
     branches: [ "*" ]
   workflow_call:
+    secrets:
+      SONAR_PROJECT_KEY:
+        required: true
+      SONAR_ORG:
+        required: true
+      SONAR_TOKEN:
+        required: true
 
 jobs:
   unit_tests:
