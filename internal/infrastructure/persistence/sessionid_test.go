@@ -15,7 +15,7 @@ import (
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 )
 
-func TestSessionIDRepository_Get_DatabaseError(t *testing.T) {
+func TestSessionIDStore_Get_DatabaseError(t *testing.T) {
 	repo, mock := setupSessionIDSQLMock(t)
 
 	mock.ExpectQuery(`SELECT id, created_at FROM candhis_session`).
@@ -25,7 +25,7 @@ func TestSessionIDRepository_Get_DatabaseError(t *testing.T) {
 	assert.EqualError(t, err, "failed to get session ID from database: database error")
 }
 
-func TestSessionIDRepository_Get_NotFound(t *testing.T) {
+func TestSessionIDStore_Get_NotFound(t *testing.T) {
 	repo, mock := setupSessionIDSQLMock(t)
 
 	mock.ExpectQuery(`SELECT id, created_at FROM candhis_session`).
@@ -35,7 +35,7 @@ func TestSessionIDRepository_Get_NotFound(t *testing.T) {
 	assert.EqualError(t, err, "no session ID found in database")
 }
 
-func TestSessionIDRepository_Get_Success(t *testing.T) {
+func TestSessionIDStore_Get_Success(t *testing.T) {
 	repo, mock := setupSessionIDSQLMock(t)
 
 	expectedID := "some-session-id"
@@ -52,7 +52,7 @@ func TestSessionIDRepository_Get_Success(t *testing.T) {
 	assert.Equal(t, expectedCreatedAt, sessionID.CreatedAt())
 }
 
-func TestSessionIDRepository_Update_DatabaseError(t *testing.T) {
+func TestSessionIDStore_Update_DatabaseError(t *testing.T) {
 	repo, mock := setupSessionIDSQLMock(t)
 
 	sessionID := modeltest.MustCreateCandhisSessionID(t, "some-session-id")
@@ -68,7 +68,7 @@ func TestSessionIDRepository_Update_DatabaseError(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestSessionIDRepository_Update_NoRowsAffected(t *testing.T) {
+func TestSessionIDStore_Update_NoRowsAffected(t *testing.T) {
 	repo, mock := setupSessionIDSQLMock(t)
 
 	sessionID := modeltest.MustCreateCandhisSessionID(t, "some-session-id")
@@ -84,7 +84,7 @@ func TestSessionIDRepository_Update_NoRowsAffected(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestSessionIDRepository_Update_Success(t *testing.T) {
+func TestSessionIDStore_Update_Success(t *testing.T) {
 	repo, mock := setupSessionIDSQLMock(t)
 
 	sessionID := modeltest.MustCreateCandhisSessionID(t, "some-session-id")
@@ -106,7 +106,7 @@ func setupSessionIDSQLMock(t *testing.T) (repository.SessionID, sqlmock.Sqlmock)
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 
-	repo := persistence.NewSessionIDRepository(db)
+	repo := persistence.NewSessionIDStore(db)
 
 	return repo, mock
 }

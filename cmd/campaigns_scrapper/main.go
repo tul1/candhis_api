@@ -1,21 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/tul1/candhis_api/internal/application/service/client"
-	"github.com/tul1/candhis_api/internal/domain/model"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/pkg/db"
 	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
@@ -25,52 +19,6 @@ const (
 	candhisURL                         = "https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ=="
 	elasticSearchIndexLesPierresNoires = "les-pierres-noires"
 )
-
-func pushWaveDataToES(waveDataList []model.WaveData) error {
-	// Initialize Elasticsearch client
-	es, err := elasticsearch.NewDefaultClient()
-	if err != nil {
-		return fmt.Errorf("error creating Elasticsearch client: %v", err)
-	}
-
-	// Loop over the waveDataList and insert each document into Elasticsearch
-	for _, waveData := range waveDataList {
-		dataJSON, err := json.Marshal(waveData)
-		if err != nil {
-			log.Printf("Failed to marshal wave data to JSON: %v", err)
-			continue
-		}
-
-		// Use the RFC3339 formatted timestamp as the DocumentID
-		documentID := waveData.Timestamp().Format(time.RFC3339)
-
-		// Prepare the request to index the data
-		req := esapi.IndexRequest{
-			Index:      elasticSearchIndexLesPierresNoires,
-			DocumentID: documentID,
-			Body:       bytes.NewReader(dataJSON),
-			Refresh:    "true",
-		}
-
-		// Perform the request
-		res, err := req.Do(context.Background(), es)
-		if err != nil {
-			log.Printf("Error indexing document: %v", err)
-			continue
-		}
-		defer res.Body.Close()
-
-		// Check if the request was successful
-		if res.IsError() {
-			body, _ := io.ReadAll(res.Body)
-			log.Printf("Error indexing document: %s\nResponse body: %s", res.Status(), string(body))
-		} else {
-			log.Printf("Successfully indexed document: %s", documentID)
-		}
-	}
-
-	return nil
-}
 
 func loadConfig(configFile string) (*Config, error) {
 	var config *Config
@@ -120,7 +68,7 @@ func main() {
 		return
 	}
 	// Retrieve the latest session ID from the database
-	sessionIDRepo := persistence.NewSessionIDRepository(dbConn)
+	sessionIDRepo := persistence.NewSessionIDStore(dbConn)
 	sessionID, err := sessionIDRepo.Get(ctx)
 	if err != nil {
 		log.Fatalf("Failed to retrieve session ID: %v", err)
@@ -133,9 +81,22 @@ func main() {
 		log.Fatalf("Failed to get table data: %v", err)
 	}
 
-	// Push the data to Elasticsearch
-	err = pushWaveDataToES(waveDataList)
+	// Initialize the Elasticsearch client with custom URL and port
+	esClient, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{config.ElasticsearchURL},
+	})
 	if err != nil {
-		log.Fatalf("Failed to push data to Elasticsearch: %v", err)
+		log.Fatalf("Failed to create Elasticsearch client: %v", err)
+	}
+
+	// Initialize the WaveDataStore with the Elasticsearch client
+	waveDataStore := persistence.NewWaveData(esClient)
+
+	// Iterate over waveDataList and index each wave data element individually
+	for _, waveData := range waveDataList {
+		err := waveDataStore.AddWaveData(ctx, waveData, elasticSearchIndexLesPierresNoires)
+		if err != nil {
+			log.Printf("Failed to push wave data to Elasticsearch: %v", err)
+		}
 	}
 }

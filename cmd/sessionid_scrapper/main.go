@@ -69,7 +69,7 @@ func main() {
 	defer httpClient.CloseIdleConnections()
 
 	candhisScraper := service.NewCandhisScraper(
-		persistence.NewSessionIDRepository(dbConn),
+		persistence.NewSessionIDStore(dbConn),
 		client.NewScrapingBeeClient(&httpClient, config.ScrapingbeeAPIKey),
 	)
 

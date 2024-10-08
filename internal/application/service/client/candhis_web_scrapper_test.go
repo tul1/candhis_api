@@ -93,6 +93,14 @@ func TestGatherWaveDataFromWebTable_EmptyResponse(t *testing.T) {
 	assert.Empty(t, waveData)
 }
 
+type mockRoundTripper struct {
+	mockHandler func(req *http.Request) *http.Response
+}
+
+func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return m.mockHandler(req), nil
+}
+
 func setupMockCandhisScrapper(t *testing.T, mockHandler func(req *http.Request) *http.Response) repo.CandhisWebScrapper {
 	t.Helper()
 

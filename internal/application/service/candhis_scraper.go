@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/tul1/candhis_api/internal/application/repository"
@@ -9,6 +10,7 @@ import (
 
 type CandhisScraper interface {
 	RetrieveAndStoreCandhisSessionID(ctx context.Context) error
+	ScrappingCandhisCampaigns(ctx context.Context) error
 }
 
 type candhisScraper struct {
@@ -32,4 +34,8 @@ func (s *candhisScraper) RetrieveAndStoreCandhisSessionID(ctx context.Context) e
 	}
 
 	return nil
+}
+
+func (s *candhisScraper) ScrappingCandhisCampaigns(ctx context.Context) error {
+	return errors.New("ScrappingCandhisCampaigns unimplemented")
 }
