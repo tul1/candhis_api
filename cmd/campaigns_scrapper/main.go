@@ -10,12 +10,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/tul1/candhis_api/internal/application/service/client"
 	"github.com/tul1/candhis_api/internal/domain/model"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/pkg/db"
@@ -26,58 +25,6 @@ const (
 	candhisURL                         = "https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ=="
 	elasticSearchIndexLesPierresNoires = "les-pierres-noires"
 )
-
-func parseRow(cells *goquery.Selection) (model.WaveData, error) {
-	if cells.Length() != 8 {
-		return model.WaveData{}, fmt.Errorf("expected 8 cells, but got %d", cells.Length())
-	}
-
-	values := make([]string, 8)
-	cells.Each(func(cellIndex int, cell *goquery.Selection) {
-		values[cellIndex] = strings.TrimSpace(cell.Text())
-	})
-
-	return model.NewWaveData(values[0], values[1], values[2], values[3],
-		values[4], values[5], values[6], values[7])
-}
-
-func getTableData(client *http.Client, phpsessid string) ([]model.WaveData, error) {
-	var waveDataList []model.WaveData
-
-	reqURL := candhisURL
-	req, err := http.NewRequest(http.MethodGet, candhisURL, http.NoBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request, url: %s, error: %w", reqURL, err)
-	}
-
-	req.Header.Set("Accept", "text/html")
-	req.Header.Set("Cookie", fmt.Sprintf("acceptCookies=true; %s", phpsessid))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to perform request, url: %s, error: %w", reqURL, err)
-	}
-	defer resp.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed parse HTML: %w", err)
-	}
-
-	doc.Find("table.table-striped.table-bordered.table-sm").Each(func(index int, table *goquery.Selection) {
-		table.Find("tr").Each(func(rowIndex int, row *goquery.Selection) {
-			waveData, err := parseRow(row.Find("td"))
-			if err != nil {
-				log.Printf("Skipping row due to error: %v", err)
-				return
-			}
-
-			waveDataList = append(waveDataList, waveData)
-		})
-	})
-
-	return waveDataList, nil
-}
 
 func pushWaveDataToES(waveDataList []model.WaveData) error {
 	// Initialize Elasticsearch client
@@ -179,9 +126,9 @@ func main() {
 		log.Fatalf("Failed to retrieve session ID: %v", err)
 	}
 
-	// Create an HTTP client and use the session ID to scrape data
-	client := &http.Client{}
-	waveDataList, err := getTableData(client, sessionID.ID())
+	// Create an HTTP client and use the session ID to scrap data
+	candhisWebScrapperClient := client.NewCandhisWebScrapper(&http.Client{})
+	waveDataList, err := candhisWebScrapperClient.GatherWaveDataFromWebTable(sessionID.ID(), candhisURL)
 	if err != nil {
 		log.Fatalf("Failed to get table data: %v", err)
 	}
