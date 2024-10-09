@@ -27,11 +27,9 @@ func TestSessionIDStore_Get_NotFound(t *testing.T) {
 func TestSessionIDStore_Get_Success(t *testing.T) {
 	persistor, sessionIDStore := setupSessionIDTest(t)
 
-	// Add session ID to the database using the persistor
 	sessionID := modeltest.MustCreateCandhisSessionID(t, "some-session-id")
 	persistor.SessionID().Add(&sessionID)
 
-	// Fetch the session ID from the database
 	retrievedSessionID, err := sessionIDStore.Get(context.Background())
 	require.NoError(t, err)
 
@@ -42,7 +40,6 @@ func TestSessionIDStore_Get_Success(t *testing.T) {
 func TestSessionIDStore_Update_NotExistingCandhisSessionID(t *testing.T) {
 	_, sessionIDStore := setupSessionIDTest(t)
 
-	// Try to update a session ID that doesn't exist
 	sessionID := modeltest.MustCreateCandhisSessionID(t, "non-existing-session-id")
 	err := sessionIDStore.Update(context.Background(), &sessionID)
 	assert.EqualError(t, err, "no session ID found to update")
@@ -51,16 +48,13 @@ func TestSessionIDStore_Update_NotExistingCandhisSessionID(t *testing.T) {
 func TestSessionIDStore_Update_Success(t *testing.T) {
 	persistor, sessionIDStore := setupSessionIDTest(t)
 
-	// Add an initial session ID to the database
 	initialSessionID := modeltest.MustCreateCandhisSessionID(t, "initial-session-id")
 	persistor.SessionID().Add(&initialSessionID)
 
-	// Update the session ID with new values
 	updatedSessionID := modeltest.MustCreateCandhisSessionID(t, "updated-session-id")
 	err := sessionIDStore.Update(context.Background(), &updatedSessionID)
 	require.NoError(t, err)
 
-	// Fetch the session ID from the database and assert the updated values
 	retrievedSessionID, err := sessionIDStore.Get(context.Background())
 	require.NoError(t, err)
 
