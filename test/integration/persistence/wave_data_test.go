@@ -14,7 +14,7 @@ import (
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence/persistencetest"
 )
 
-func TestWaveDataStore_ListWaveData_Success(t *testing.T) {
+func TestWaveData_AddWaveData_Success(t *testing.T) {
 	ctx := context.Background()
 	persistor, waveDataStore := setupWaveDataTest(t)
 
