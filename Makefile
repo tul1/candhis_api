@@ -10,6 +10,11 @@ DB_ENV_VARS=DATABASE_HOST=$(DATABASE_HOST) \
             DATABASE_PASSWORD=$(DATABASE_PASSWORD) \
             DATABASE_NAME=$(DATABASE_NAME)
 
+ELASTICSEARCH_HOST=localhost
+ELASTICSEARCH_PORT=9200
+ELASTICSEARCH_URL=ELASTICSEARCH_URL=http://$(ELASTICSEARCH_HOST):$(ELASTICSEARCH_PORT)
+
+
 # Downloding dependencies #
 
 .PHONY: download
@@ -78,7 +83,7 @@ test-unit:
 .PHONY: test-integration
 test-integration:
 	go clean -testcache
-	$(DB_ENV_VARS) go test -timeout=15s -count=1 -p 1 ./test/integration/...
+	$(DB_ENV_VARS) $(ELASTICSEARCH_URL) go test -timeout=15s -count=1 -p 1 ./test/integration/...
 
 # Cleaning #
 

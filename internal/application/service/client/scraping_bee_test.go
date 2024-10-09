@@ -57,14 +57,6 @@ func TestGetCandhisSessionID_RequestError(t *testing.T) {
 		`error response from server, status: 500, response: {"message": "Internal Server Error"}, url: `)
 }
 
-type mockRoundTripper struct {
-	mockHandler func(req *http.Request) *http.Response
-}
-
-func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	return m.mockHandler(req), nil
-}
-
 func setupMockScrapingBeeClient(t *testing.T, mockHandler func(req *http.Request) *http.Response) repository.ScrapingBeeClient {
 	t.Helper()
 
