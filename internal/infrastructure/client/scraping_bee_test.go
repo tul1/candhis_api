@@ -11,7 +11,7 @@ import (
 	"github.com/tul1/candhis_api/internal/infrastructure/client"
 )
 
-func TestGetCandhisSessionID_Success(t *testing.T) {
+func TestScrapingBeeGetCandhisSessionID_Success(t *testing.T) {
 	mockHandler := func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
