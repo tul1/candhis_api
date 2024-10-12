@@ -15,6 +15,7 @@ const (
 	// In order to create and activate the sessionID cookie we need to click in any buttom of the web page.
 	// The ID "#idBtnAr" is the ID of the buttom "Archives" and the ID "#idBtnTR" is the buttom "temps reel".
 	scrapingbeeJSScenario = `{"instructions":[{"click":"#idBtnAr"},{"wait":1000},{"click":"#idBtnTR"},{"wait":1000}]}`
+	candhisURL            = "https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ=="
 )
 
 type scrapingBeeClient struct {

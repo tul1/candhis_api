@@ -9,10 +9,6 @@ import (
 	"github.com/tul1/candhis_api/internal/application/model"
 )
 
-const (
-	candhisURL = "https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ=="
-)
-
 type candhisSessionIDWebScraper struct {
 	chromeURL string
 	chromeID  string
@@ -28,10 +24,13 @@ func (c *candhisSessionIDWebScraper) GetCandhisSessionID(ctx context.Context) (m
 	ctx, cancel := chromedp.NewRemoteAllocator(ctx, chromodpWS)
 	defer cancel()
 
+	ctx, cancel = chromedp.NewContext(ctx)
+	defer cancel()
+
 	var cookies []*network.Cookie
 	err := chromedp.Run(ctx,
 		network.Enable(),
-		chromedp.Navigate(candhisURL),
+		chromedp.Navigate(c.targetWeb),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var err error
 			cookies, err = network.GetCookies().Do(ctx)
