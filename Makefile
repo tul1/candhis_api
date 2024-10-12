@@ -15,6 +15,13 @@ ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_URL=ELASTICSEARCH_URL=http://$(ELASTICSEARCH_HOST):$(ELASTICSEARCH_PORT)
 
 
+# Define environment variables for Chrome Headless Scraper
+CHROME_URL=0.0.0.0:9222
+TARGET_WEB=https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ==
+SCRAPER_ENV_VARS=CHROME_URL=$(CHROME_URL) \
+                 TARGET_WEB=$(TARGET_WEB)
+
+
 # Downloding dependencies #
 
 .PHONY: download
@@ -36,6 +43,11 @@ db:
 	@echo "Starting the database and applying migrations..."
 	docker-compose up -d postgres migrate
 
+.PHONY: chrome-headless
+chrome-headless:
+	@echo "Starting the chrome-headless to use scraper..."
+	docker run -d --rm --cap-add=SYS_ADMIN -p 9222:9222 justinribeiro/chrome-headless:latest
+
 .PHONY: elasticsearch
 elasticsearch:
 	@echo "Starting the Elasticsearch service..."
@@ -47,7 +59,7 @@ logs_stack:
 	docker-compose up -d elasticsearch_logs fluentd metricbeat kibana_logs
 
 .PHONY: run_app_infra
-run-infra: db elasticsearch logs_stack
+run-infra: db elasticsearch chrome-headless logs_stack
 	@echo "Infrastructure services are up and running."
 
 # Building apps #
@@ -83,7 +95,7 @@ test-unit:
 .PHONY: test-integration
 test-integration:
 	go clean -testcache
-	$(DB_ENV_VARS) $(ELASTICSEARCH_URL) go test -timeout=15s -count=1 -p 1 ./test/integration/...
+	$(DB_ENV_VARS) $(ELASTICSEARCH_URL) $(SCRAPER_ENV_VARS) go test -timeout=15s -count=1 -p 1 ./test/integration/...
 
 # Cleaning #
 

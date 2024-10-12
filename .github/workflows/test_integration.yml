@@ -19,18 +19,26 @@ jobs:
                 postgres
                 migrate
                 elasticsearch
-
-        - name: Setup Go environment
-          uses: actions/setup-go@v5
-          with:
-            go-version: 1.23
         
         - name: Wait for Elasticsearch to be ready
           run: |
             until curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"'; do
               echo "Waiting for Elasticsearch..."
               sleep 5
+            done  
+          
+        - name: Run and wait for Headless Chrome to be ready
+          run: |
+            make chrome-headless
+            until curl -s http://localhost:9222/json/version | grep -q 'webSocketDebuggerUrl'; do
+              echo "Waiting for Headless Chrome..."
+              sleep 5
             done
+
+        - name: Setup Go environment
+          uses: actions/setup-go@v5
+          with:
+            go-version: 1.23
 
         - name: Integration tests
           run: make download test-integration
