@@ -7,44 +7,26 @@ import (
 	"github.com/tul1/candhis_api/internal/application/repository"
 )
 
-type CandhisScraper interface {
-	RetrieveAndStoreCandhisSessionID(ctx context.Context) error
+type CandhisCampaignsScraper interface {
 	ScrapingCandhisCampaigns(ctx context.Context) error
 }
 
-type candhisScraper struct {
+type candhisCampaignsScraper struct {
 	sessionID                        repository.SessionID
 	waveData                         repository.WaveData
-	candhisSessionIDWebScraperClient repository.CandhisSessionIDWebScraper
 	candhisCampaignsWebScraperClient repository.CandhisCampaignsWebScraper
 }
 
-func NewCandhisScraper(
+func NewCandhisCampaignsScraper(
 	sessionIDRepo repository.SessionID,
 	waveDataRepo repository.WaveData,
-	candhisSessionIDWebScraperClient repository.CandhisSessionIDWebScraper,
 	candhisCampaignsWebScraperClient repository.CandhisCampaignsWebScraper,
-) *candhisScraper {
-	return &candhisScraper{
+) *candhisCampaignsScraper {
+	return &candhisCampaignsScraper{
 		sessionIDRepo,
 		waveDataRepo,
-		candhisSessionIDWebScraperClient,
 		candhisCampaignsWebScraperClient,
 	}
-}
-
-func (s *candhisScraper) RetrieveAndStoreCandhisSessionID(ctx context.Context) error {
-	candhisSessionID, err := s.candhisSessionIDWebScraperClient.GetCandhisSessionID(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get session ID from candhis web: %w", err)
-	}
-
-	err = s.sessionID.Update(ctx, candhisSessionID)
-	if err != nil {
-		return fmt.Errorf("failed to update session ID in database: %w", err)
-	}
-
-	return nil
 }
 
 const (
@@ -52,7 +34,7 @@ const (
 	elasticSearchIndexLesPierresNoires = "les-pierres-noires"
 )
 
-func (s *candhisScraper) ScrapingCandhisCampaigns(ctx context.Context) error {
+func (s *candhisCampaignsScraper) ScrapingCandhisCampaigns(ctx context.Context) error {
 	candhisSessionID, err := s.sessionID.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get session ID from db: %w", err)
