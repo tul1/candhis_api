@@ -1,3 +1,11 @@
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=coverage)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=bugs)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
 # Candhis Wave Data Scraper & API
 
 This project is a Golang-based service that scrapes wave data from the [Candhis website](https://candhis.cerema.fr/), specifically from tables containing buoy data. The data is then stored in a PostgreSQL database and pushed to an Elasticsearch instance for further analysis and retrieval. The project consists of two main components: `sessionID_scrapper` and `campaigns_scrapper`.
