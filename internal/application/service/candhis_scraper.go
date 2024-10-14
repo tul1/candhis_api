@@ -13,28 +13,28 @@ type CandhisScraper interface {
 }
 
 type candhisScraper struct {
-	sessionID               repository.SessionID
-	waveData                repository.WaveData
-	scrapingBeeClient       repository.ScrapingBeeClient
-	candhisWebScraperClient repository.CandhisWebScraper
+	sessionID                        repository.SessionID
+	waveData                         repository.WaveData
+	candhisSessionIDWebScraperClient repository.CandhisSessionIDWebScraper
+	candhisCampaignsWebScraperClient repository.CandhisCampaignsWebScraper
 }
 
 func NewCandhisScraper(
 	sessionIDRepo repository.SessionID,
 	waveDataRepo repository.WaveData,
-	scrapingBeeClient repository.ScrapingBeeClient,
-	candhisWebScraperClient repository.CandhisWebScraper,
+	candhisSessionIDWebScraperClient repository.CandhisSessionIDWebScraper,
+	candhisCampaignsWebScraperClient repository.CandhisCampaignsWebScraper,
 ) *candhisScraper {
 	return &candhisScraper{
 		sessionIDRepo,
 		waveDataRepo,
-		scrapingBeeClient,
-		candhisWebScraperClient,
+		candhisSessionIDWebScraperClient,
+		candhisCampaignsWebScraperClient,
 	}
 }
 
 func (s *candhisScraper) RetrieveAndStoreCandhisSessionID(ctx context.Context) error {
-	candhisSessionID, err := s.scrapingBeeClient.GetCandhisSessionID()
+	candhisSessionID, err := s.candhisSessionIDWebScraperClient.GetCandhisSessionID(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get session ID from candhis web: %w", err)
 	}
@@ -58,7 +58,7 @@ func (s *candhisScraper) ScrapingCandhisCampaigns(ctx context.Context) error {
 		return fmt.Errorf("failed to get session ID from db: %w", err)
 	}
 
-	waveDataList, err := s.candhisWebScraperClient.GatherWavesDataFromWebTable(
+	waveDataList, err := s.candhisCampaignsWebScraperClient.GatherWavesDataFromWebTable(
 		*candhisSessionID, candhisURL)
 	if err != nil {
 		return fmt.Errorf("failed to gather waves data from candhis web: %w", err)

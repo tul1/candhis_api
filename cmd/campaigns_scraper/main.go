@@ -77,7 +77,7 @@ func main() {
 		persistence.NewSessionID(dbConn),
 		persistence.NewWaveData(esClient),
 		nil,
-		client.NewCandhisWebScraper(&httpClient),
+		client.NewCandhisCampaignsWebScraper(&httpClient),
 	)
 
 	// Scraping and store campaigns from Candhis web

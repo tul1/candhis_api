@@ -69,7 +69,7 @@ func TestGatherWavesDataFromWebTable_Success(t *testing.T) {
 	mockHandler := func(req *http.Request) *http.Response {
 		return MockHTTPResponse(200, mockHTMLResponse)
 	}
-	scraper := setupMockCandhisScraper(t, mockHandler)
+	scraper := setupMockCandhisCampaignsWebScraper(t, mockHandler)
 
 	waveData, err := scraper.GatherWavesDataFromWebTable(
 		appmodeltest.MustCreateCandhisSessionID(t, "valid-session-id"), "http://fake.url")
@@ -88,7 +88,7 @@ func TestGatherWavesDataFromWebTable_EmptyResponse(t *testing.T) {
 	mockHandler := func(req *http.Request) *http.Response {
 		return MockHTTPResponse(200, "")
 	}
-	scraper := setupMockCandhisScraper(t, mockHandler)
+	scraper := setupMockCandhisCampaignsWebScraper(t, mockHandler)
 
 	waveData, err := scraper.GatherWavesDataFromWebTable(
 		appmodeltest.MustCreateCandhisSessionID(t, "valid-session-id"), "http://fake.url")
@@ -104,10 +104,10 @@ func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return m.mockHandler(req), nil
 }
 
-func setupMockCandhisScraper(t *testing.T, mockHandler func(req *http.Request) *http.Response) repo.CandhisWebScraper {
+func setupMockCandhisCampaignsWebScraper(t *testing.T, mockHandler func(req *http.Request) *http.Response) repo.CandhisCampaignsWebScraper {
 	t.Helper()
 
 	mockClient := &http.Client{Transport: &mockRoundTripper{mockHandler: mockHandler}}
 
-	return client.NewCandhisWebScraper(mockClient)
+	return client.NewCandhisCampaignsWebScraper(mockClient)
 }

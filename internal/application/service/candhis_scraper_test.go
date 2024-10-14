@@ -22,7 +22,7 @@ func TestRetrieveAndStoreCandhisSessionID_Success(t *testing.T) {
 
 	sessionID := appmodeltest.MustCreateCandhisSessionID(t, "valid-session-id")
 
-	mocks.mockScrapingBeeClient.EXPECT().GetCandhisSessionID().Return(sessionID, nil)
+	mocks.mockCandhisSessionIDWebScraperClient.EXPECT().GetCandhisSessionID(gomock.Any()).Return(sessionID, nil)
 	mocks.sessionID.EXPECT().Update(gomock.Any(), sessionID).Return(nil)
 
 	err := candhisScraper.RetrieveAndStoreCandhisSessionID(context.Background())
@@ -32,7 +32,7 @@ func TestRetrieveAndStoreCandhisSessionID_Success(t *testing.T) {
 func TestRetrieveAndStoreCandhisSessionID_ScrapingBeeClientFailure(t *testing.T) {
 	mocks, candhisScraper := setupCandhisScraperAndMocks(t)
 
-	mocks.mockScrapingBeeClient.EXPECT().GetCandhisSessionID().Return(
+	mocks.mockCandhisSessionIDWebScraperClient.EXPECT().GetCandhisSessionID(gomock.Any()).Return(
 		appmodel.CandhisSessionID{}, errors.New("error scraping bee"))
 
 	err := candhisScraper.RetrieveAndStoreCandhisSessionID(context.Background())
@@ -44,7 +44,7 @@ func TestRetrieveAndStoreCandhisSessionID_UpdateSessionIDFailure(t *testing.T) {
 
 	sessionID := appmodeltest.MustCreateCandhisSessionID(t, "valid-session-id")
 
-	mocks.mockScrapingBeeClient.EXPECT().GetCandhisSessionID().Return(sessionID, nil)
+	mocks.mockCandhisSessionIDWebScraperClient.EXPECT().GetCandhisSessionID(gomock.Any()).Return(sessionID, nil)
 	mocks.sessionID.EXPECT().Update(gomock.Any(), sessionID).Return(errors.New("error db"))
 
 	err := candhisScraper.RetrieveAndStoreCandhisSessionID(context.Background())
@@ -114,10 +114,10 @@ func TestScrapingCandhisCampaigns_AddWaveDataFailure(t *testing.T) {
 }
 
 type testingMocks struct {
-	sessionID                   *persistencemock.MockSessionID
-	waveData                    *persistencemock.MockWaveData
-	mockScrapingBeeClient       *clientmock.MockScrapingBeeClient
-	mockCandhisWebScraperClient *clientmock.MockCandhisWebScraper
+	sessionID                            *persistencemock.MockSessionID
+	waveData                             *persistencemock.MockWaveData
+	mockCandhisSessionIDWebScraperClient *clientmock.MockCandhisSessionIDWebScraper
+	mockCandhisWebScraperClient          *clientmock.MockCandhisWebScraper
 }
 
 func setupCandhisScraperAndMocks(t *testing.T) (testingMocks, service.CandhisScraper) {
@@ -126,13 +126,13 @@ func setupCandhisScraperAndMocks(t *testing.T) (testingMocks, service.CandhisScr
 	ctrl := gomock.NewController(t)
 	mockSessionIDRepo := persistencemock.NewMockSessionID(ctrl)
 	mockWaveDataRepo := persistencemock.NewMockWaveData(ctrl)
-	mockScrapingBeeClient := clientmock.NewMockScrapingBeeClient(ctrl)
+	mockCandhisSessionIDWebScraperClient := clientmock.NewMockCandhisSessionIDWebScraper(ctrl)
 	mockCandhisWebScraperClient := clientmock.NewMockCandhisWebScraper(ctrl)
 
 	return testingMocks{
-		sessionID:                   mockSessionIDRepo,
-		waveData:                    mockWaveDataRepo,
-		mockScrapingBeeClient:       mockScrapingBeeClient,
-		mockCandhisWebScraperClient: mockCandhisWebScraperClient,
-	}, service.NewCandhisScraper(mockSessionIDRepo, mockWaveDataRepo, mockScrapingBeeClient, mockCandhisWebScraperClient)
+		sessionID:                            mockSessionIDRepo,
+		waveData:                             mockWaveDataRepo,
+		mockCandhisSessionIDWebScraperClient: mockCandhisSessionIDWebScraperClient,
+		mockCandhisWebScraperClient:          mockCandhisWebScraperClient,
+	}, service.NewCandhisScraper(mockSessionIDRepo, mockWaveDataRepo, mockCandhisSessionIDWebScraperClient, mockCandhisWebScraperClient)
 }
