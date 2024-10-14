@@ -73,16 +73,15 @@ func main() {
 		return
 	}
 
-	candhisScraper := service.NewCandhisScraper(
+	candhisCampaignsScraper := service.NewCandhisCampaignsScraper(
 		persistence.NewSessionID(dbConn),
 		persistence.NewWaveData(esClient),
-		nil,
 		client.NewCandhisCampaignsWebScraper(&httpClient),
 	)
 
 	// Scraping and store campaigns from Candhis web
 	log.Info("Start scraping Candhis web campaigns")
-	err = candhisScraper.ScrapingCandhisCampaigns(ctx)
+	err = candhisCampaignsScraper.ScrapingCandhisCampaigns(ctx)
 	if err != nil {
 		log.Errorf("Failed while scraping Candhis web campaigns: %v", err)
 		return

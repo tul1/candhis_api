@@ -73,11 +73,9 @@ func main() {
 	}
 
 	// Create candhisScraper service
-	candhisScraper := service.NewCandhisScraper(
+	candhisScraper := service.NewCandhisSessionIDScraper(
 		persistence.NewSessionID(dbConn),
-		nil,
 		client.NewCandhisSessionIDWebScraper(config.ChromeURL, chromeID, config.TargetWeb),
-		nil,
 	)
 
 	// Retrieve and Store CandhisSessionID
