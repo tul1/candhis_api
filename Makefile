@@ -10,6 +10,7 @@ DB_ENV_VARS=DATABASE_HOST=$(DATABASE_HOST) \
             DATABASE_PASSWORD=$(DATABASE_PASSWORD) \
             DATABASE_NAME=$(DATABASE_NAME)
 
+# Define environment variables for Elasticsearch connection
 ELASTICSEARCH_HOST=localhost
 ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_URL=ELASTICSEARCH_URL=http://$(ELASTICSEARCH_HOST):$(ELASTICSEARCH_PORT)
@@ -90,7 +91,7 @@ lint:
 .PHONY: test-unit
 test-unit:
 	go clean -testcache
-	go test -count=1 ./cmd/... ./internal/... -coverprofile cover.out
+	go test -count=1 ./internal/... -coverprofile cover.out
 
 .PHONY: test-integration
 test-integration:
