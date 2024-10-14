@@ -20,8 +20,8 @@ jobs:
   test_integration:
     uses: ./.github/workflows/test_integration.yml
 
-  deploy_binaries:
-    needs: [lint, test_unit, test_integration]
-    uses: ./.github/workflows/deploy_binaries.yml
-    secrets:
-      ANSIBLE_SSH_PRIVATE_KEY: ${{secrets.ANSIBLE_SSH_PRIVATE_KEY}}
+  # deploy_binaries:
+  #   needs: [lint, test_unit, test_integration]
+  #   uses: ./.github/workflows/deploy_binaries.yml
+  #   secrets:
+  #     ANSIBLE_SSH_PRIVATE_KEY: ${{secrets.ANSIBLE_SSH_PRIVATE_KEY}}
