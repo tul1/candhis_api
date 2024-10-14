@@ -80,11 +80,11 @@ func main() {
 	)
 
 	// Scraping and store campaigns from Candhis web
-	log.Info("Start scraping Candhis web to fetch wave data from campaigns")
+	log.Info("Start scraping Candhis web to fetch and store wave data from campaigns")
 	err = candhisCampaignsScraper.FetchAndStoreWaveData(ctx)
 	if err != nil {
-		log.Errorf("Failed scraping Candhis web to fetch wave data from campaigns: %v", err)
+		log.Errorf("Failed scraping Candhis web to fetch and store wave data from campaigns: %v", err)
 		return
 	}
-	log.Info("Finished scraping Candhis web to fetch wave data from campaigns Successfully")
+	log.Info("Finished scraping Candhis web to fetch and store wave data from campaigns Successfully")
 }

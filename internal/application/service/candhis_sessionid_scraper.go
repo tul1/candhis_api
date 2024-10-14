@@ -8,7 +8,7 @@ import (
 )
 
 type CandhisSessionIDScraper interface {
-	RetrieveAndStoreCandhisSessionID(ctx context.Context) error
+	FetchAndStoreSessionID(ctx context.Context) error
 }
 
 type candhisSessionIDScraper struct {
@@ -23,7 +23,7 @@ func NewCandhisSessionIDScraper(
 	return &candhisSessionIDScraper{sessionID, candhisSessionIDWebScraperClient}
 }
 
-func (s *candhisSessionIDScraper) RetrieveAndStoreCandhisSessionID(ctx context.Context) error {
+func (s *candhisSessionIDScraper) FetchAndStoreSessionID(ctx context.Context) error {
 	candhisSessionID, err := s.candhisSessionIDWebScraperClient.GetCandhisSessionID(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get session ID from candhis web: %w", err)
