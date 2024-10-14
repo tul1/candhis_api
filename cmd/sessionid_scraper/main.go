@@ -79,10 +79,10 @@ func main() {
 	)
 
 	// Retrieve and Store CandhisSessionID
-	log.Info("Start to retrieve from Candhis web and store session ID in DB")
-	if err = candhisScraper.RetrieveAndStoreCandhisSessionID(ctx); err != nil {
-		log.Errorf("Failed to retrieve and store candhis session ID: %v", err)
+	log.Info("Start scraping Candhis web to fetch and store session id")
+	if err = candhisScraper.FetchAndStoreSessionID(ctx); err != nil {
+		log.Errorf("Failed scraping Candhis web to fetch and store session id: %v", err)
 		return
 	}
-	log.Info("Finished retrieving from Candhis web and storing session ID in DB successfully")
+	log.Info("Finished scraping Candhis web to fetch and store session id successfully")
 }

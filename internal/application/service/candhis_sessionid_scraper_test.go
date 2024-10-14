@@ -16,7 +16,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestCandhisSessionIDScraper_RetrieveAndStoreCandhisSessionID_Success(t *testing.T) {
+func TestCandhisSessionIDScraper_FetchAndStoreSessionID_Success(t *testing.T) {
 	mocks, candhisScraper := setupCandhisSessionIDScraperAndMocks(t)
 
 	sessionID := appmodeltest.MustCreateCandhisSessionID(t, "valid-session-id")
@@ -24,21 +24,21 @@ func TestCandhisSessionIDScraper_RetrieveAndStoreCandhisSessionID_Success(t *tes
 	mocks.candhisSessionIDWebScraperClient.EXPECT().GetCandhisSessionID(gomock.Any()).Return(sessionID, nil)
 	mocks.sessionID.EXPECT().Update(gomock.Any(), sessionID).Return(nil)
 
-	err := candhisScraper.RetrieveAndStoreCandhisSessionID(context.Background())
+	err := candhisScraper.FetchAndStoreSessionID(context.Background())
 	assert.NoError(t, err)
 }
 
-func TestCandhisSessionIDScraper_RetrieveAndStoreCandhisSessionID_ScrapingBeeClientFailure(t *testing.T) {
+func TestCandhisSessionIDScraper_FetchAndStoreSessionID_ScrapingBeeClientFailure(t *testing.T) {
 	mocks, candhisScraper := setupCandhisSessionIDScraperAndMocks(t)
 
 	mocks.candhisSessionIDWebScraperClient.EXPECT().GetCandhisSessionID(gomock.Any()).Return(
 		appmodel.CandhisSessionID{}, errors.New("error scraping bee"))
 
-	err := candhisScraper.RetrieveAndStoreCandhisSessionID(context.Background())
+	err := candhisScraper.FetchAndStoreSessionID(context.Background())
 	assert.EqualError(t, err, "failed to get session ID from candhis web: error scraping bee")
 }
 
-func TestCandhisSessionIDScraper_RetrieveAndStoreCandhisSessionID_UpdateSessionIDFailure(t *testing.T) {
+func TestCandhisSessionIDScraper_FetchAndStoreSessionID_UpdateSessionIDFailure(t *testing.T) {
 	mocks, candhisScraper := setupCandhisSessionIDScraperAndMocks(t)
 
 	sessionID := appmodeltest.MustCreateCandhisSessionID(t, "valid-session-id")
@@ -46,7 +46,7 @@ func TestCandhisSessionIDScraper_RetrieveAndStoreCandhisSessionID_UpdateSessionI
 	mocks.candhisSessionIDWebScraperClient.EXPECT().GetCandhisSessionID(gomock.Any()).Return(sessionID, nil)
 	mocks.sessionID.EXPECT().Update(gomock.Any(), sessionID).Return(errors.New("error db"))
 
-	err := candhisScraper.RetrieveAndStoreCandhisSessionID(context.Background())
+	err := candhisScraper.FetchAndStoreSessionID(context.Background())
 	assert.EqualError(t, err, "failed to update session ID in database: error db")
 }
 
