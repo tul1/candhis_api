@@ -8,7 +8,7 @@ import (
 )
 
 type CandhisCampaignsScraper interface {
-	ScrapingCandhisCampaigns(ctx context.Context) error
+	FetchAndStoreWaveData(ctx context.Context) error
 }
 
 type candhisCampaignsScraper struct {
@@ -34,7 +34,7 @@ const (
 	elasticSearchIndexLesPierresNoires = "les-pierres-noires"
 )
 
-func (s *candhisCampaignsScraper) ScrapingCandhisCampaigns(ctx context.Context) error {
+func (s *candhisCampaignsScraper) FetchAndStoreWaveData(ctx context.Context) error {
 	candhisSessionID, err := s.sessionID.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get session ID from db: %w", err)
