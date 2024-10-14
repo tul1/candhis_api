@@ -13,15 +13,15 @@ import (
 
 const expectedCellsNum = 8
 
-type candhisWebScraper struct {
+type candhisCampaignsWebScraper struct {
 	client *http.Client
 }
 
-func NewCandhisWebScraper(client *http.Client) *candhisWebScraper {
-	return &candhisWebScraper{client}
+func NewCandhisCampaignsWebScraper(client *http.Client) *candhisCampaignsWebScraper {
+	return &candhisCampaignsWebScraper{client}
 }
 
-func (c *candhisWebScraper) GatherWavesDataFromWebTable(
+func (c *candhisCampaignsWebScraper) GatherWavesDataFromWebTable(
 	candhisSessionID appmodel.CandhisSessionID,
 	candhisURL string,
 ) ([]model.WaveData, error) {
@@ -60,7 +60,7 @@ func (c *candhisWebScraper) GatherWavesDataFromWebTable(
 	return waveDataList, nil
 }
 
-func (c *candhisWebScraper) parseRowOfWebTable(cells *goquery.Selection) (model.WaveData, error) {
+func (c *candhisCampaignsWebScraper) parseRowOfWebTable(cells *goquery.Selection) (model.WaveData, error) {
 	if cells.Length() != expectedCellsNum {
 		return model.WaveData{}, fmt.Errorf("expected %d cells, but got %d", expectedCellsNum, cells.Length())
 	}

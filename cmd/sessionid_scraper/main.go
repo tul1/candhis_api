@@ -10,6 +10,7 @@ import (
 	"github.com/tul1/candhis_api/internal/application/service"
 	"github.com/tul1/candhis_api/internal/infrastructure/client"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
+	"github.com/tul1/candhis_api/internal/pkg/chrome"
 	"github.com/tul1/candhis_api/internal/pkg/db"
 	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
 	"github.com/tul1/candhis_api/internal/pkg/logger"
@@ -62,14 +63,20 @@ func main() {
 		return
 	}
 
-	// Create candhisScraper service
+	// Get Get Chrome ID from headless-chrome service
 	httpClient := http.Client{}
 	defer httpClient.CloseIdleConnections()
+	chromeID, err := chrome.GetChromeID(&httpClient, config.ChromeURL)
+	if err != nil {
+		log.Errorf("Failed to get chrome ID: %v", err)
+		return
+	}
 
+	// Create candhisScraper service
 	candhisScraper := service.NewCandhisScraper(
 		persistence.NewSessionID(dbConn),
 		nil,
-		client.NewScrapingBeeClient(&httpClient, config.ScrapingbeeAPIKey),
+		client.NewCandhisSessionIDWebScraper(config.ChromeURL, chromeID, config.TargetWeb),
 		nil,
 	)
 
