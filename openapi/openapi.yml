@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Candhis API
+  version: 0.1.0
+  description: Candhis API specification.
+servers:
+  - url: http://localhost/api/v1
+tags:
+  - name: monitoring
+    description: Application monitoring
+paths:
+  /ping:
+    get:
+      tags:
+        - monitoring
+      description: Returns pong
+      operationId: ping
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pong'
+components:
+  schemas:
+    Pong: 
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: authentication validation
+    errorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: failed to do the expected task
