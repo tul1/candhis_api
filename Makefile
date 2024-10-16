@@ -37,6 +37,10 @@ deps_test:
 deps_lint:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
 
+.PHONY: deps_openapi
+deps-openapi:
+	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v2.4.1
+
 # Infrastructure components #
 
 .PHONY: db
@@ -75,8 +79,18 @@ build-sessionid-scraper:
 	@echo "Building the sessionid_scraper binary"
 	@cd cmd/sessionid_scraper && $(MAKE) build --no-print-directory
 
+.PHONY: build-openapi
+build-openapi:
+	@echo "Building the openapi packages"
+	oapi-codegen --config oapi-codegen.yml "openapi/openapi.yml"
+
+.PHONY: build-api
+build-api: build-openapi
+	@echo "Building the api binary"
+	@cd cmd/api && $(MAKE) build --no-print-directory
+
 .PHONY: build
-build: build-sessionid-scraper build-campaigns-scraper
+build: build-api build-sessionid-scraper build-campaigns-scraper
 
 # Testing #
 
