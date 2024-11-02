@@ -2,7 +2,6 @@ package persistence_test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence/persistencetest"
 	"github.com/tul1/candhis_api/internal/pkg/db"
+	"github.com/tul1/candhis_api/internal/pkg/logger"
 )
 
 func TestSessionIDStore_Get_NotFound(t *testing.T) {
@@ -74,20 +74,17 @@ func setupSessionIDTest(t *testing.T) (*persistencetest.Persistor, repository.Se
 	user := os.Getenv("DATABASE_USER")
 	require.NotEmpty(t, user)
 
-	dbname := os.Getenv("DATABASE_NAME")
-	require.NotEmpty(t, dbname)
+	dbName := os.Getenv("DATABASE_NAME")
+	require.NotEmpty(t, dbName)
 
 	password := os.Getenv("DATABASE_PASSWORD")
 	require.NotEmpty(t, password)
 
-	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
-		host, port, user, dbname, password)
-
-	dbConn, err := db.NewDatabaseConnection(dsn)
+	dbConn, err := db.NewDBConnection(user, password, host, port, dbName, db.DefaultDBConnector, logger.NewWithDefaultLogger())
 	require.NoError(t, err, "failed to initialize database connection")
 
-	sessionIDStore := persistence.NewSessionID(dbConn)
-	persistor := persistencetest.NewPersistor(t, dbConn)
+	sessionIDStore := persistence.NewSessionID(dbConn.DB)
+	persistor := persistencetest.NewPersistor(t, dbConn.DB)
 
 	t.Cleanup(func() { persistor.Clear() })
 

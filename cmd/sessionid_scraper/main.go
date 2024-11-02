@@ -2,38 +2,17 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
-	"fmt"
 	"net/http"
 
 	"github.com/tul1/candhis_api/internal/application/service"
 	"github.com/tul1/candhis_api/internal/infrastructure/client"
 	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/pkg/chrome"
+	"github.com/tul1/candhis_api/internal/pkg/configuration"
 	"github.com/tul1/candhis_api/internal/pkg/db"
-	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
 	"github.com/tul1/candhis_api/internal/pkg/logger"
 )
-
-func loadConfig(configFile string) (*Config, error) {
-	var config *Config
-	if err := loadconfig.LoadConfig(configFile, config); err != nil {
-		return nil, fmt.Errorf("failed to load configuration: %w", err)
-	}
-	return config, nil
-}
-
-func createDBConnection(config Config) (*sql.DB, error) {
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.DBUser, config.DBPassword, config.DBHost, config.DBPort, config.DBName)
-
-	dbConn, err := db.NewDatabaseConnection(dbURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to PostgreSQL: %w", err)
-	}
-
-	return dbConn, nil
-}
 
 func main() {
 	log := logger.NewWithDefaultLogger()
@@ -44,28 +23,25 @@ func main() {
 	flag.Parse()
 
 	// Load configuration
-	config, err := loadConfig(*configFile)
+	config, err := configuration.Load[Config](*configFile)
 	if err != nil {
 		log.Errorf("Configuration error: %v", err)
 		return
 	}
 
 	// Create connect to the PostgreSQL database
-	dbConn, err := createDBConnection(*config)
-	defer func() {
-		if err = dbConn.Close(); err != nil {
-			log.Errorf("Failed closing database: %v", err)
-			return
-		}
-	}()
+	dbConn, err := db.NewDBConnection(
+		config.DBUser, config.DBPassword, config.DBHost, config.DBPort, config.DBName, db.DefaultDBConnector, log)
 	if err != nil {
 		log.Errorf("Database connection error: %v", err)
 		return
 	}
+	defer dbConn.CloseWithLog()
 
 	// Get Get Chrome ID from headless-chrome service
 	httpClient := http.Client{}
 	defer httpClient.CloseIdleConnections()
+
 	chromeID, err := chrome.GetChromeID(&httpClient, config.ChromeURL)
 	if err != nil {
 		log.Errorf("Failed to get chrome ID: %v", err)
@@ -74,7 +50,7 @@ func main() {
 
 	// Create candhisScraper service
 	candhisScraper := service.NewCandhisSessionIDScraper(
-		persistence.NewSessionID(dbConn),
+		persistence.NewSessionID(dbConn.DB),
 		client.NewCandhisSessionIDWebScraper(config.ChromeURL, chromeID, config.TargetWeb),
 	)
 
