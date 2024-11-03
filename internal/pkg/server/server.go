@@ -20,7 +20,14 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func NewGinServer(log *logger.Logger, publicURL string, port int) (*Server, error) {
+type Logger interface {
+	Errorf(format string, args ...interface{})
+	Info(format string)
+
+	WithFields(fields logger.Fields) Logger
+}
+
+func NewGinServer(log Logger, publicURL string, port int) (*Server, error) {
 	s := &Server{port: port, router: gin.New()}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -54,7 +61,7 @@ func (s *Server) Close() error {
 	return s.httpServer.Shutdown(ctx)
 }
 
-func logRequestMiddleware(log *logger.Logger) gin.HandlerFunc {
+func logRequestMiddleware(log Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Start timer
 		start := time.Now()

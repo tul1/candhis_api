@@ -44,12 +44,12 @@ func TestLogger_WithFields(t *testing.T) {
 	log := logger.NewWithDefaultLogger()
 	log.SetOutput(&buf)
 
-	log = log.WithFields(logger.Fields{
+	logWithFields := log.WithFields(logger.Fields{
 		"user_id": 123,
 		"action":  "test",
 	})
 
-	log.Info("Test message with fields")
+	logWithFields.Info("Test message with fields")
 
 	var logEntry map[string]interface{}
 	err := json.Unmarshal(buf.Bytes(), &logEntry)

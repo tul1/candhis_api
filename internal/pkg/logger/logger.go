@@ -49,8 +49,8 @@ func (l *Logger) WithField(key string, value interface{}) *Logger {
 }
 
 // WithFields adds multiple fields to the logger and returns a new instance.
-func (l *Logger) WithFields(fields Fields) *Logger {
-	return &Logger{
+func (l *Logger) WithFields(fields Fields) Logger {
+	return Logger{
 		logger: l.logger,
 		fields: l.fields.Merge(fields),
 	}
