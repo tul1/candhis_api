@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  api:
+    image: candhis-api:latest
+    container_name: api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - candhis_network
+
   postgres:
     image: postgres:14
     container_name: postgres

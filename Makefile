@@ -22,6 +22,8 @@ TARGET_WEB=https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ==
 SCRAPER_ENV_VARS=CHROME_URL=$(CHROME_URL) \
                  TARGET_WEB=$(TARGET_WEB)
 
+# Define environment variables for API setup
+API_ENV_VARS=API_PUBLIC_URL=http://localhost:8080
 
 # Downloding dependencies #
 
@@ -36,6 +38,10 @@ deps_test:
 .PHONY: deps_lint
 deps_lint:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
+
+.PHONY: deps_openapi
+deps-openapi:
+	go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 
 # Infrastructure components #
 
@@ -75,8 +81,18 @@ build-sessionid-scraper:
 	@echo "Building the sessionid_scraper binary"
 	@cd cmd/sessionid_scraper && $(MAKE) build --no-print-directory
 
+.PHONY: build-openapi
+build-openapi:
+	@echo "Building the openapi packages"
+	oapi-codegen --config oapi-codegen.yml "openapi/openapi.yml"
+
+.PHONY: build-api
+build-api: build-openapi
+	@echo "Building the api binary"
+	@cd cmd/api && $(MAKE) build --no-print-directory
+
 .PHONY: build
-build: build-sessionid-scraper build-campaigns-scraper
+build: build-api build-sessionid-scraper build-campaigns-scraper
 
 # Testing #
 
@@ -97,6 +113,11 @@ test-unit:
 test-integration:
 	go clean -testcache
 	$(DB_ENV_VARS) $(ELASTICSEARCH_URL) $(SCRAPER_ENV_VARS) go test -timeout=15s -count=1 -p 1 ./test/integration/...
+
+.PHONY: test-e2e
+test-e2e:
+	go clean -testcache
+	$(API_ENV_VARS) go test -timeout=15s -count=1 -p 1 ./test/e2e/...
 
 # Cleaning #
 

@@ -1,4 +1,4 @@
-package loadconfig_test
+package configuration_test
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tul1/candhis_api/internal/pkg/loadconfig"
+	"github.com/tul1/candhis_api/internal/pkg/configuration"
 )
 
 type ConfigTestStruct1 struct {
@@ -24,8 +24,8 @@ type ConfigTestStruct2 struct {
 }
 
 func TestLoadConfigErrorOnNonExistentFile(t *testing.T) {
-	var config interface{}
-	err := loadconfig.LoadConfig("non_existent.yml", &config)
+	type config struct{}
+	_, err := configuration.Load[config]("non_existent.yml")
 	assert.ErrorContains(t, err, "no such file or directory")
 }
 
@@ -64,7 +64,6 @@ db_name: "test_db`,
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			var config ConfigTestStruct1
 			configFile, err := os.CreateTemp("", "config*.yml")
 			assert.NoError(t, err, "Failed to create temp file")
 			defer os.Remove(configFile.Name())
@@ -74,7 +73,7 @@ db_name: "test_db`,
 			configFile.Close()
 
 			// Load the config
-			err = loadconfig.LoadConfig(configFile.Name(), &config)
+			_, err = configuration.Load[ConfigTestStruct1](configFile.Name())
 			assert.ErrorContains(t, err, test.expectedError)
 		})
 	}
@@ -97,8 +96,7 @@ db_name: "test_db"
 	assert.NoError(t, err, "Failed to write to temp file")
 	configFile.Close()
 
-	var config1 ConfigTestStruct1
-	err = loadconfig.LoadConfig(configFile.Name(), &config1)
+	config1, err := configuration.Load[ConfigTestStruct1](configFile.Name())
 	assert.NoError(t, err)
 
 	assert.Equal(t, "test_user", config1.DBUser)
@@ -119,8 +117,7 @@ func TestLoadConfigStruct2(t *testing.T) {
 	require.NoError(t, err, "Failed to write to temp file")
 	configFile.Close()
 
-	var config2 ConfigTestStruct2
-	err = loadconfig.LoadConfig(configFile.Name(), &config2)
+	config2, err := configuration.Load[ConfigTestStruct2](configFile.Name())
 	assert.NoError(t, err)
 
 	assert.Equal(t, "TestApp", config2.AppName)
