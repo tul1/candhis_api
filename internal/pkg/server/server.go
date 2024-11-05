@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tul1/candhis_api/internal/pkg/logger"
+	"github.com/sirupsen/logrus"
 )
 
 const ShutdownTimeout = 5 * time.Second
@@ -20,14 +20,7 @@ type Server struct {
 	httpServer *http.Server
 }
 
-type Logger interface {
-	Errorf(format string, args ...interface{})
-	Info(format string)
-
-	WithFields(fields logger.Fields) Logger
-}
-
-func NewGinServer(log Logger, publicURL string, port int) (*Server, error) {
+func NewGinServer(log *logrus.Logger, publicURL string, port int) (*Server, error) {
 	s := &Server{port: port, router: gin.New()}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -61,7 +54,7 @@ func (s *Server) Close() error {
 	return s.httpServer.Shutdown(ctx)
 }
 
-func logRequestMiddleware(log Logger) gin.HandlerFunc {
+func logRequestMiddleware(log *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Start timer
 		start := time.Now()
@@ -77,21 +70,22 @@ func logRequestMiddleware(log Logger) gin.HandlerFunc {
 			c.Request.Body = io.NopCloser(&buf)
 		}
 
-		logWithFields := log.WithFields(logger.Fields{
-			"start":     start,
-			"path":      c.Request.URL.Path,
-			"path_rule": c.FullPath(),
-			"query":     c.Request.URL.RawQuery,
-			"method":    c.Request.Method,
-			"body":      string(body),
-		})
+		logWithFields := log.WithFields(
+			logrus.Fields{
+				"start":     start,
+				"path":      c.Request.URL.Path,
+				"path_rule": c.FullPath(),
+				"query":     c.Request.URL.RawQuery,
+				"method":    c.Request.Method,
+				"body":      string(body),
+			})
 		logWithFields.Info("request received")
 
 		// Process request
 		c.Next()
 
 		end := time.Now()
-		logWithFields.WithFields(logger.Fields{
+		logWithFields.WithFields(logrus.Fields{
 			"status_code": c.Writer.Status(),
 			"end":         end,
 			"latency":     end.Sub(start),
