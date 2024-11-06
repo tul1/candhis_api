@@ -17,10 +17,18 @@ type chromedpScraper struct {
 }
 
 func NewChromedpScraper(client *http.Client, chromeURL string) (*chromedpScraper, error) {
+	if !strings.HasPrefix(chromeURL, "http://") && !strings.HasPrefix(chromeURL, "https://") {
+		chromeURL = "http://" + chromeURL
+	}
+
 	chromeID, err := getChromeID(client, chromeURL)
 	if err != nil {
 		return nil, err
 	}
+
+	chromeURL = strings.TrimPrefix(chromeURL, "http://")
+	chromeURL = strings.TrimPrefix(chromeURL, "https://")
+
 	return &chromedpScraper{
 		chromodpWS: fmt.Sprintf("ws://%s/devtools/browser/%s", chromeURL, chromeID),
 	}, nil

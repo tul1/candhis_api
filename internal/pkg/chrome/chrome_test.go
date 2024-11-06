@@ -24,7 +24,7 @@ func TestNewChromedpScraper_Success(t *testing.T) {
 	}
 	client := setupMockHTTPClient(mockHandler)
 
-	scraper, err := chrome.NewChromedpScraper(client, "http://fake.url")
+	scraper, err := chrome.NewChromedpScraper(client, "fake.url")
 	require.NoError(t, err)
 	assert.NotNil(t, scraper)
 }
@@ -51,7 +51,7 @@ func TestNewChromedpScraper_Failures(t *testing.T) {
 			}
 			client := setupMockHTTPClient(mockHandler)
 
-			_, err := chrome.NewChromedpScraper(client, "http://fake.url")
+			_, err := chrome.NewChromedpScraper(client, "fake.url")
 			require.EqualError(t, err, tc.expectedErr)
 		})
 	}
