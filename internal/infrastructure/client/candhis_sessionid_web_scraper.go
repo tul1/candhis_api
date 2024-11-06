@@ -5,38 +5,32 @@ import (
 	"fmt"
 
 	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/chromedp"
 	"github.com/tul1/candhis_api/internal/application/model"
 )
 
-type candhisSessionIDWebScraper struct {
-	chromeURL string
-	chromeID  string
-	targetWeb string
+//go:generate mockgen -package scrapermock -destination=./scraper_mock/scraper_mock.go -source=candhis_sessionid_web_scraper.go ScraperMock
+type Scraper interface {
+	Run(ctx context.Context, targetWeb string, actionFunc func(context.Context) error) error
 }
 
-func NewCandhisSessionIDWebScraper(chromeURL, chromeID, targetWeb string) *candhisSessionIDWebScraper {
-	return &candhisSessionIDWebScraper{chromeURL, chromeID, targetWeb}
+type candhisSessionIDWebScraper struct {
+	chromeScraper Scraper
+	targetWeb     string
+}
+
+func NewCandhisSessionIDWebScraper(chromeScraper Scraper, targetWeb string) *candhisSessionIDWebScraper {
+	return &candhisSessionIDWebScraper{chromeScraper, targetWeb}
 }
 
 func (c *candhisSessionIDWebScraper) GetCandhisSessionID(ctx context.Context) (model.CandhisSessionID, error) {
-	chromodpWS := fmt.Sprintf("ws://%s/devtools/browser/%s", c.chromeURL, c.chromeID)
-	ctx, cancel := chromedp.NewRemoteAllocator(ctx, chromodpWS)
-	defer cancel()
-
-	ctx, cancel = chromedp.NewContext(ctx)
-	defer cancel()
-
 	var cookies []*network.Cookie
-	err := chromedp.Run(ctx,
-		network.Enable(),
-		chromedp.Navigate(c.targetWeb),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			var err error
-			cookies, err = network.GetCookies().Do(ctx)
-			return err
-		}),
-	)
+	getCookies := func(ctx context.Context) error {
+		var err error
+		cookies, err = network.GetCookies().Do(ctx)
+		return err
+	}
+
+	err := c.chromeScraper.Run(ctx, c.targetWeb, getCookies)
 	if err != nil {
 		return model.CandhisSessionID{}, fmt.Errorf("failed while running chromedp tasks to retrieve session id: %w", err)
 	}

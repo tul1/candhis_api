@@ -1,16 +1,42 @@
 package chrome
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/chromedp"
 )
+
+type chromedpScraper struct {
+	chromodpWS string
+}
+
+func NewChromedpScraper(client *http.Client, chromeURL string) (*chromedpScraper, error) {
+	if !strings.HasPrefix(chromeURL, "http://") && !strings.HasPrefix(chromeURL, "https://") {
+		chromeURL = "http://" + chromeURL
+	}
+
+	chromeID, err := getChromeID(client, chromeURL)
+	if err != nil {
+		return nil, err
+	}
+
+	chromeURL = strings.TrimPrefix(chromeURL, "http://")
+	chromeURL = strings.TrimPrefix(chromeURL, "https://")
+
+	return &chromedpScraper{
+		chromodpWS: fmt.Sprintf("ws://%s/devtools/browser/%s", chromeURL, chromeID),
+	}, nil
+}
 
 const webSocketDebuggerURLFieldSplitedParts = 6
 
-func GetChromeID(client *http.Client, chromeURL string) (string, error) {
+func getChromeID(client *http.Client, chromeURL string) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/json/version", chromeURL), http.NoBody)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request, url: %s, error: %w", chromeURL, err)
@@ -45,4 +71,18 @@ func GetChromeID(client *http.Client, chromeURL string) (string, error) {
 	}
 
 	return parts[len(parts)-1], nil
+}
+
+func (cs *chromedpScraper) Run(ctx context.Context, targetWeb string, actionFunc func(context.Context) error) error {
+	ctx, cancel := chromedp.NewRemoteAllocator(ctx, cs.chromodpWS)
+	defer cancel()
+
+	ctx, cancel = chromedp.NewContext(ctx)
+	defer cancel()
+
+	return chromedp.Run(ctx,
+		network.Enable(),
+		chromedp.Navigate(targetWeb),
+		chromedp.ActionFunc(actionFunc),
+	)
 }
