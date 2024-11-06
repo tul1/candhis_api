@@ -42,16 +42,16 @@ func main() {
 	httpClient := http.Client{}
 	defer httpClient.CloseIdleConnections()
 
-	chromeID, err := chrome.GetChromeID(&httpClient, config.ChromeURL)
+	chromeScraper, err := chrome.NewChromedpScraper(&httpClient, config.ChromeURL)
 	if err != nil {
-		log.Errorf("Failed to get chrome ID: %v", err)
+		log.Errorf("Chrome scraper initialization error: %v", err)
 		return
 	}
 
 	// Create candhisScraper service
 	candhisScraper := service.NewCandhisSessionIDScraper(
 		persistence.NewSessionID(dbConn.DB),
-		client.NewCandhisSessionIDWebScraper(config.ChromeURL, chromeID, config.TargetWeb),
+		client.NewCandhisSessionIDWebScraper(chromeScraper, config.TargetWeb),
 	)
 
 	// Retrieve and Store CandhisSessionID

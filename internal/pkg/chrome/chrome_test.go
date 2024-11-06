@@ -11,25 +11,25 @@ import (
 	"github.com/tul1/candhis_api/internal/pkg/chrome"
 )
 
-func MockHTTPResponse(statusCode int, body string) *http.Response {
+func mockHTTPResponse(statusCode int, body string) *http.Response {
 	return &http.Response{
 		StatusCode: statusCode,
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }
 
-func TestGetChromeID_Success(t *testing.T) {
+func TestNewChromedpScraper_Success(t *testing.T) {
 	mockHandler := func(req *http.Request) *http.Response {
-		return MockHTTPResponse(200, `{"webSocketDebuggerUrl": "ws://localhost:9222/devtools/browser/abc123"}`)
+		return mockHTTPResponse(200, `{"webSocketDebuggerUrl": "ws://localhost:9222/devtools/browser/abc123"}`)
 	}
 	client := setupMockHTTPClient(mockHandler)
 
-	chromeID, err := chrome.GetChromeID(client, "http://fake.url")
+	scraper, err := chrome.NewChromedpScraper(client, "http://fake.url")
 	require.NoError(t, err)
-	assert.Equal(t, "abc123", chromeID, "chrome ID did not match expected value")
+	assert.NotNil(t, scraper)
 }
 
-func TestGetChromeID_Failures(t *testing.T) {
+func TestNewChromedpScraper_Failures(t *testing.T) {
 	testCases := map[string]struct {
 		mockResponse string
 		expectedErr  string
@@ -47,11 +47,11 @@ func TestGetChromeID_Failures(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			mockHandler := func(req *http.Request) *http.Response {
-				return MockHTTPResponse(200, tc.mockResponse)
+				return mockHTTPResponse(200, tc.mockResponse)
 			}
 			client := setupMockHTTPClient(mockHandler)
 
-			_, err := chrome.GetChromeID(client, "http://fake.url")
+			_, err := chrome.NewChromedpScraper(client, "http://fake.url")
 			require.EqualError(t, err, tc.expectedErr)
 		})
 	}
