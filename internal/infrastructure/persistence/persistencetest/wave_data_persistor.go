@@ -120,7 +120,7 @@ func (p *waveDataPersistor) Clear(ctx context.Context) {
 	p.t.Helper()
 
 	req := esapi.DeleteByQueryRequest{
-		Index: []string{"wave_data_test"},
+		Index: []string{"_all"},
 		Body:  strings.NewReader(`{"query": {"match_all": {}}}`),
 	}
 	res, err := req.Do(ctx, p.esClient)
@@ -131,4 +131,7 @@ func (p *waveDataPersistor) Clear(ctx context.Context) {
 	}()
 	require.NoError(p.t, err, "failed to clear wave_data index in Elasticsearch: %v", err)
 	require.False(p.t, res.IsError())
+
+	_, err = p.esClient.Indices.Refresh()
+	require.NoError(p.t, err, "failed to refresh index after clearing wave_data_test")
 }
