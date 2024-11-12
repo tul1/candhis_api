@@ -1,0 +1,37 @@
+type: object
+required:
+  - timestamp
+  - averageTopThirdWaveHeight
+  - maxHeight
+  - averageTopThirdWavePeriod
+  - peakDirection
+  - peakDirectionalSpread
+  - temperature
+properties:
+  timestamp:
+    description: Timestamp of the observation.
+    type: string
+  averageTopThirdWaveHeight:
+    description: Significant wave height, the average value of the highest one-third of wave heights observed over a 30-minute period.
+    type: number
+  maxHeight:
+    description: Height of the largest wave observed over a 30-minute period.
+    type: number
+  averageTopThirdWavePeriod:
+    description: |
+      Significant period, defined by the average value of the periods of the highest one-third of the largest waves observed
+      over a 30-minute period.
+    type: number
+  peakDirection:
+    description: |
+      Average direction of wave origin at the peak of the energy spectrum. The angle is measured positively, in a clockwise
+      direction, between geographic north and the direction of the wave origin.
+    type: number
+  peakDirectionalSpread:
+    description: |
+      Directional width, characterizing the directional spread of energy around the average direction at the peak (angular
+      distribution function of energy associated with the peak frequency of the energy spectrum).
+    type: integer
+  temperature:
+    description: Water temperature in degrees Celsius at the time of the observation.
+    type: number

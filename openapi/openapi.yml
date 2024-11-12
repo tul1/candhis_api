@@ -22,21 +22,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pong'
+  /waves:
+    get:
+      tags:
+        - waves
+      description: Returns waves data
+      operationId: waves
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Waves'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
-    Pong: 
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          type: string
-          example: authentication validation
-    errorResponse:
-      type: object
-      required:
-        - error
-      properties:
-        error:
-          type: string
-          example: failed to do the expected task
+    Pong:
+      $ref: './schemas/pong.yml'
+    Error:
+      $ref: './schemas/error.yml'
+    Waves:
+      $ref: './schemas/waves.yml'

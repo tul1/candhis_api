@@ -1,0 +1,8 @@
+# ErrorResponse
+type: object
+required:
+  - message
+properties:
+  message:
+    type: string
+    example: failed to do the expected task.
