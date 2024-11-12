@@ -120,7 +120,7 @@ func (p *waveDataPersistor) Clear(ctx context.Context) {
 	p.t.Helper()
 
 	req := esapi.DeleteByQueryRequest{
-		Index: []string{"_all"},
+		Index: []string{"wave_data_test"},
 		Body:  strings.NewReader(`{"query": {"match_all": {}}}`),
 	}
 	res, err := req.Do(ctx, p.esClient)
