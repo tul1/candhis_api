@@ -16,7 +16,7 @@ import (
 func TestPing(t *testing.T) {
 	resp := httptest.NewRecorder()
 	ctx, r := gin.CreateTestContext(resp)
-	api := candhisapi.NewCandhisAPI(r)
+	api := candhisapi.NewCandhisAPI(r, nil)
 
 	api.Ping(ctx)
 

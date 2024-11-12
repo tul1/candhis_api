@@ -2,11 +2,14 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/elastic/go-elasticsearch/v8"
 	candhisapi "github.com/tul1/candhis_api/internal/application/candhis_api"
+	"github.com/tul1/candhis_api/internal/infrastructure/persistence"
 	"github.com/tul1/candhis_api/internal/pkg/configuration"
 	"github.com/tul1/candhis_api/internal/pkg/logger"
 	"github.com/tul1/candhis_api/internal/pkg/server"
@@ -34,7 +37,19 @@ func main() {
 	}
 
 	// Register candhis API handlers
-	_ = candhisapi.NewCandhisAPI(s.GetRouter())
+	httpClient := http.Client{}
+	defer httpClient.CloseIdleConnections()
+
+	esClient, err := elasticsearch.NewClient(elasticsearch.Config{Addresses: []string{config.ElasticsearchURL}})
+	if err != nil {
+		log.Errorf("Failed to create Elasticsearch client: %v", err)
+		return
+	}
+
+	_ = candhisapi.NewCandhisAPI(
+		s.GetRouter(),
+		persistence.NewWaveData(esClient),
+	)
 
 	// Start server
 	errCh := make(chan error)
