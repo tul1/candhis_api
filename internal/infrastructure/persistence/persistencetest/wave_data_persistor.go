@@ -28,10 +28,10 @@ func NewWaveDataPersistor(t *testing.T, esClient *elasticsearch.Client) *waveDat
 	}
 }
 
-func (p *waveDataPersistor) Add(ctx context.Context, waveData *model.WaveData, index string) {
+func (p *waveDataPersistor) Add(ctx context.Context, waveData model.WaveData, index string) {
 	p.t.Helper()
 
-	data, err := json.Marshal(waveData)
+	data, err := json.Marshal(&waveData)
 	require.NoError(p.t, err, "failed to marshal WaveData")
 
 	req := esapi.IndexRequest{
@@ -131,4 +131,7 @@ func (p *waveDataPersistor) Clear(ctx context.Context) {
 	}()
 	require.NoError(p.t, err, "failed to clear wave_data index in Elasticsearch: %v", err)
 	require.False(p.t, res.IsError())
+
+	_, err = p.esClient.Indices.Refresh()
+	require.NoError(p.t, err, "failed to refresh index after clearing wave_data_test")
 }

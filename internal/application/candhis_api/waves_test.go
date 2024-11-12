@@ -13,17 +13,17 @@ import (
 	"github.com/tul1/candhis_api/openapi"
 )
 
-func TestPing(t *testing.T) {
+func TestWaves(t *testing.T) {
 	resp := httptest.NewRecorder()
 	ctx, r := gin.CreateTestContext(resp)
 	api := candhisapi.NewCandhisAPI(r, nil)
 
-	api.Ping(ctx)
+	api.Waves(ctx)
 
-	var pingResp openapi.Pong
-	err := json.Unmarshal(resp.Body.Bytes(), &pingResp)
+	var wavesResp openapi.Error
+	err := json.Unmarshal(resp.Body.Bytes(), &wavesResp)
 	require.NoError(t, err)
 
-	assert.Equal(t, http.StatusOK, resp.Code)
-	assert.Equal(t, "pong", pingResp.Message)
+	assert.Equal(t, http.StatusInternalServerError, resp.Code)
+	assert.Equal(t, "unimplemented path", wavesResp.Message)
 }

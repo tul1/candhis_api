@@ -15,9 +15,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Error defines model for Error.
+type Error struct {
+	Message string `json:"message"`
+}
+
 // Pong defines model for Pong.
 type Pong struct {
 	Message string `json:"message"`
+}
+
+// Waves defines model for Waves.
+type Waves = []struct {
+	// AverageTopThirdWaveHeight Significant wave height, the average value of the highest one-third of wave heights observed over a 30-minute period.
+	AverageTopThirdWaveHeight float32 `json:"averageTopThirdWaveHeight"`
+
+	// AverageTopThirdWavePeriod Significant period, defined by the average value of the periods of the highest one-third of the largest waves observed
+	// over a 30-minute period.
+	AverageTopThirdWavePeriod float32 `json:"averageTopThirdWavePeriod"`
+
+	// MaxHeight Height of the largest wave observed over a 30-minute period.
+	MaxHeight float32 `json:"maxHeight"`
+
+	// PeakDirection Average direction of wave origin at the peak of the energy spectrum. The angle is measured positively, in a clockwise
+	// direction, between geographic north and the direction of the wave origin.
+	PeakDirection float32 `json:"peakDirection"`
+
+	// PeakDirectionalSpread Directional width, characterizing the directional spread of energy around the average direction at the peak (angular
+	// distribution function of energy associated with the peak frequency of the energy spectrum).
+	PeakDirectionalSpread int `json:"peakDirectionalSpread"`
+
+	// Temperature Water temperature in degrees Celsius at the time of the observation.
+	Temperature float32 `json:"temperature"`
+
+	// Timestamp Timestamp of the observation.
+	Timestamp string `json:"timestamp"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -95,10 +127,25 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 type ClientInterface interface {
 	// Ping request
 	Ping(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Waves request
+	Waves(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) Ping(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPingRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Waves(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewWavesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +166,33 @@ func NewPingRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/ping")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewWavesRequest generates requests for Waves
+func NewWavesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/waves")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -181,6 +255,9 @@ func WithBaseURL(baseURL string) ClientOption {
 type ClientWithResponsesInterface interface {
 	// PingWithResponse request
 	PingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PingResponse, error)
+
+	// WavesWithResponse request
+	WavesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*WavesResponse, error)
 }
 
 type PingResponse struct {
@@ -205,6 +282,29 @@ func (r PingResponse) StatusCode() int {
 	return 0
 }
 
+type WavesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Waves
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r WavesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r WavesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // PingWithResponse request returning *PingResponse
 func (c *ClientWithResponses) PingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PingResponse, error) {
 	rsp, err := c.Ping(ctx, reqEditors...)
@@ -212,6 +312,15 @@ func (c *ClientWithResponses) PingWithResponse(ctx context.Context, reqEditors .
 		return nil, err
 	}
 	return ParsePingResponse(rsp)
+}
+
+// WavesWithResponse request returning *WavesResponse
+func (c *ClientWithResponses) WavesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*WavesResponse, error) {
+	rsp, err := c.Waves(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseWavesResponse(rsp)
 }
 
 // ParsePingResponse parses an HTTP response from a PingWithResponse call
@@ -240,11 +349,47 @@ func ParsePingResponse(rsp *http.Response) (*PingResponse, error) {
 	return response, nil
 }
 
+// ParseWavesResponse parses an HTTP response from a WavesWithResponse call
+func ParseWavesResponse(rsp *http.Response) (*WavesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &WavesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Waves
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
 	// (GET /ping)
 	Ping(c *gin.Context)
+
+	// (GET /waves)
+	Waves(c *gin.Context)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -267,6 +412,19 @@ func (siw *ServerInterfaceWrapper) Ping(c *gin.Context) {
 	}
 
 	siw.Handler.Ping(c)
+}
+
+// Waves operation middleware
+func (siw *ServerInterfaceWrapper) Waves(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.Waves(c)
 }
 
 // GinServerOptions provides options for the Gin server.
@@ -297,4 +455,5 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	}
 
 	router.GET(options.BaseURL+"/ping", wrapper.Ping)
+	router.GET(options.BaseURL+"/waves", wrapper.Waves)
 }
