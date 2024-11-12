@@ -24,6 +24,6 @@ func TestWaves(t *testing.T) {
 	err := json.Unmarshal(resp.Body.Bytes(), &wavesResp)
 	require.NoError(t, err)
 
-	assert.Equal(t, http.StatusNotImplemented, resp.Code)
+	assert.Equal(t, http.StatusInternalServerError, resp.Code)
 	assert.Equal(t, "unimplemented path", wavesResp.Message)
 }

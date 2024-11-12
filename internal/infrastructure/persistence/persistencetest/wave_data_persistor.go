@@ -28,10 +28,10 @@ func NewWaveDataPersistor(t *testing.T, esClient *elasticsearch.Client) *waveDat
 	}
 }
 
-func (p *waveDataPersistor) Add(ctx context.Context, waveData *model.WaveData, index string) {
+func (p *waveDataPersistor) Add(ctx context.Context, waveData model.WaveData, index string) {
 	p.t.Helper()
 
-	data, err := json.Marshal(waveData)
+	data, err := json.Marshal(&waveData)
 	require.NoError(p.t, err, "failed to marshal WaveData")
 
 	req := esapi.IndexRequest{
