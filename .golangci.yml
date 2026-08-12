@@ -61,15 +61,14 @@ linters-settings:
         files:
           - "**/internal/domain/model/*.go"
         deny:
-          - pkg: "stash.ovh.net/nsapi/borderapi/internal/domain/model/modeltest"
-            desc: "prevent modeltest in model test file"
+          - pkg: "github.com/tul1/candhis_api/internal/domain/model/modeltest"
+            desc: "prevent modeltest in model package"
       prevent_openapi_in_tests:
         files:
-          - "**/cmd/borderapi/restapi/*_test.go"
           - "**/test/integration/**"
         deny:
-          - pkg: "stash.ovh.net/nsapi/borderapi/cmd/borderapi/restapi/openapi"
-            desc: "openapi generated files must not be used in unit and integration tests"
+          - pkg: "github.com/tul1/candhis_api/openapi"
+            desc: "openapi generated files must not be used in integration tests"
 
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.

@@ -31,7 +31,7 @@ components:
       properties:
         message:
           type: string
-          example: authentication validation
+          example: pong
     errorResponse:
       type: object
       required:

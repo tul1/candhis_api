@@ -1,198 +1,64 @@
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=coverage)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=bugs)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=tul1_candhis_api&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=tul1_candhis_api)
 # Candhis Wave Data Scraper & API
 
-This project is a Golang-based service that scrapes wave data from the [Candhis website](https://candhis.cerema.fr/), specifically from tables containing buoy data. The data is then stored in a PostgreSQL database and pushed to an Elasticsearch instance for further analysis and retrieval. The project consists of two main components: `sessionID_scrapper` and `campaigns_scrapper`.
+Scrapes buoy wave data from [Candhis](https://candhis.cerema.fr/) (Cerema) and makes it usable locally. Candhis publishes the tables on the web but has no public API.
 
-## Project Overview
+Two scrapers do the work:
 
-Candhis (Centre d'Archivage National de Données de Houle In-Situ) provides public access to wave data from buoys around the coast of France. However, no public API is currently available for direct data access. This project aims to fill that gap by:
+- **`sessionid_scraper`** — obtains the Candhis session cookie (via headless Chrome / chromedp) and stores it in **PostgreSQL**
+- **`campaigns_scraper`** — uses that session to fetch the campaign HTML table, validates each row, and indexes the observations in **Elasticsearch**
 
-- Scraping the wave data table available on the [Candhis Campaigns page](https://candhis.cerema.fr/_public_/campagne.php).
-- Storing the data in a PostgreSQL database for persistence.
-- Pushing the data to an Elasticsearch instance for indexing and retrieval.
+There is also a small Go HTTP API (OpenAPI). Today it only exposes `/ping`; listing wave data from Elasticsearch is still on the roadmap.
 
-### Example Data
+Example source page: [Les Pierres Noires](https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ==) (currently the only campaign wired in).
 
-The URL [Candhis buoy data for Les Pierres Noires](https://candhis.cerema.fr/_public_/campagne.php?Y2FtcD0wMjkxMQ==) is an example of the data provided by Candhis, showing wave data collected by the buoy located at Les Pierres Noires. The scraper extracts this data and stores it in a structured format for further use.
+## Storage
 
-## Features
+| Store | What lives there |
+| --- | --- |
+| PostgreSQL | Candhis session ID (`candhis_session`) |
+| Elasticsearch | Wave observations (e.g. index `les-pierres-noires`) |
 
-- **Data Scraper (`campaigns_scrapper`)**: Extracts wave data (including buoys, timestamps, wave heights, etc.) from the Candhis web page, validates the data, and stores it in a structured format.
-- **Session Management (`sessionID_scrapper`)**: Manages the session ID required to access the Candhis data by periodically updating the session ID stored in the database.
-- **Data Storage**: The scraped data is stored in a PostgreSQL database.
-- **Data Indexing**: The data is indexed in Elasticsearch, allowing for efficient search and retrieval.
-- **Automation**: The scrapers can be scheduled to run periodically to fetch and update data as needed.
+Wave rows are **not** written to Postgres.
 
 ## Prerequisites
 
-Before setting up the project, ensure you have the following installed:
+- Docker / Docker Compose
+- Go 1.23+ (for local builds and tests)
 
-- Docker
-- Docker Compose
-- Golang (for local development)
+## Local setup
 
-## Setup and Running the Project
-
-### 1. Configure Environment Variables
-
-Ensure that the necessary environment variables for database and Elasticsearch connections are configured. These can be set in the `docker-compose.yml` file under each service.
-
-### 2. Build and Run the Infrastructure
-
-Use the `Makefile` to set up and run the necessary infrastructure components (PostgreSQL, migrations, Elasticsearch):
+Start Postgres (with migrations), Elasticsearch, headless Chrome, and the optional logs stack:
 
 ```bash
 make run-infra
 ```
 
-This command will:
-
-- Start the PostgreSQL database.
-- Apply the necessary database migrations.
-- Start the Elasticsearch service.
-
-### 3. Run the Scrapers
-
-After the infrastructure is up and running, you can run the scrapers:
-
-- **Run the `sessionID_scrapper`:**
-
-  ```bash
-  make sessionID_scrapper
-  ```
-
-  This will update the session ID in the database.
-
-- **Run the `campaigns_scrapper`:**
-
-  ```bash
-  make campaigns_scrapper
-  ```
-
-  This will scrape the wave data from the Candhis website, store it in the database, and index it in Elasticsearch.
-
-## Database Versioning with `golang-migrate`
-
-This project uses `golang-migrate` for managing database schema migrations.
-
-### How to Add a New Migration
-
-#### **Install `golang-migrate` CLI:**
-
-First, ensure you have `golang-migrate` installed:
+Run scrapers / API with a config file (examples under `conf/`):
 
 ```bash
-go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+go run ./cmd/sessionid_scraper -config conf/sessionid_scrapper.yml
+go run ./cmd/campaigns_scraper -config conf/campaigns_scrapper.yml
+go run ./cmd/api -config conf/api.yml
 ```
 
-Alternatively, you can use Docker to run migrations without installing the CLI locally.
+`make build` produces Linux binaries under `bin/` (used for deploy).
 
-#### **Create a New Migration File:**
+Useful make targets: `test-unit`, `test-integration`, `test-e2e`, `lint`, `stop`, `clean`.
+
+### Migrations
+
+Schema changes live in `infra/db/migrations` and are applied by the `migrate` Compose service (`make run-infra` / `make db`). To add a new migration with the [golang-migrate](https://github.com/golang-migrate/migrate) CLI:
 
 ```bash
 migrate create -ext sql -dir infra/db/migrations -seq <migration_name>
 ```
 
-This command will generate a new migration file in the `infra/db/migrations` directory.
+## Deploy notes
 
-#### **Run the Migration:**
+Production deploy is handled with Ansible under `infra/ansible` (systemd units/timers for the scrapers). Keep host inventory and SSH details out of this README — see that folder if you need to deploy.
 
-```bash
-docker-compose run migrate up
-```
+## Next steps
 
-This command applies all pending migrations.
-
-#### **Rollback a Migration (Optional):**
-
-To roll back the last migration:
-
-```bash
-docker-compose run migrate down 1
-```
-
-### 5. Stopping and Cleaning Up
-
-- **Stop All Services:**
-
-  ```bash
-  make stop
-  ```
-
-- **Clean Up Containers and Volumes:**
-
-  ```bash
-  make clean
-  ```
-
-## Accessing the Host and Managing Cron Jobs
-
-### Connecting to the Host
-
-To connect to your Vultr server, use the following SSH command:
-
-```bash
-ssh root@95.179.209.34
-```
-
-If you created a non-root user, use that username instead:
-
-```bash
-ssh astraydev@95.179.209.34
-```
-
-### Checking Cron Jobs
-
-Once connected to the server, you can check the cron jobs that are set up for the `campaigns_scrapper` and `sessionID_scrapper` by editing or viewing the crontab:
-
-1. **View the Crontab**:
-   ```bash
-   crontab -l
-   ```
-
-   This command lists all cron jobs currently set up for your user.
-
-2. **Edit the Crontab**:
-   ```bash
-   crontab -e
-   ```
-
-   This command opens the crontab file in your default editor, allowing you to add, remove, or modify cron jobs.
-
-### Managing Docker Logs
-
-To monitor or troubleshoot the Docker containers, you can view the logs using the following commands:
-
-1. **View All Running Containers**:
-   ```bash
-   docker ps
-   ```
-
-   This command lists all running Docker containers.
-
-2. **View Logs for a Specific Container**:
-
-   - **`campaigns_scrapper` Logs**:
-     ```bash
-     docker logs -f campaigns_scrapper
-     ```
-
-   - **`sessionID_scrapper` Logs**:
-     ```bash
-     docker logs -f sessionID_scrapper
-     ```
-
-   The `-f` option will "follow" the logs, meaning it will show real-time log updates. Press `Ctrl + C` to exit the log view.
-
-## Next Steps
-
-- **API Interface**: Add an API interface to allow external access to the data stored in Elasticsearch.
-- **Support Multiple Campaigns**: Extend the `campaigns_scrapper` to support scraping data from multiple campaigns beyond just Les Pierres Noires.
-- **Job Scheduling**: Implement an infrastructure to run the scrapers as cron jobs, with the `sessionID_scrapper` running every 12 hours and the `campaigns_scrapper` running every 30 minutes.
+- Expose wave data over the API (read from Elasticsearch)
+- Retry when scraping fails
+- Support more campaigns than Les Pierres Noires
