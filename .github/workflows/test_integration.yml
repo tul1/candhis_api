@@ -19,21 +19,36 @@ jobs:
                 postgres
                 migrate
                 elasticsearch
-        
+
         - name: Wait for Elasticsearch to be ready
           run: |
-            until curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"'; do
-              echo "Waiting for Elasticsearch..."
+            # Single-node clusters often stay yellow; green is not required.
+            for i in $(seq 1 60); do
+              status=$(curl -sf http://localhost:9200/_cluster/health | grep -oE '"status":"(green|yellow|red)"' || true)
+              if echo "$status" | grep -qE 'green|yellow'; then
+                echo "Elasticsearch is ready ($status)"
+                exit 0
+              fi
+              echo "Waiting for Elasticsearch... ($i/60)"
               sleep 5
-            done  
-          
+            done
+            echo "Elasticsearch did not become ready in time"
+            curl -s http://localhost:9200/_cluster/health || true
+            exit 1
+
         - name: Run and wait for Headless Chrome to be ready
           run: |
             make chrome-headless
-            until curl -s http://localhost:9222/json/version | grep -q 'webSocketDebuggerUrl'; do
-              echo "Waiting for Headless Chrome..."
-              sleep 5
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:9222/json/version | grep -q 'webSocketDebuggerUrl'; then
+                echo "Chrome is ready"
+                exit 0
+              fi
+              echo "Waiting for Headless Chrome... ($i/30)"
+              sleep 2
             done
+            echo "Chrome failed to start"
+            exit 1
 
         - name: Setup Go environment
           uses: actions/setup-go@v5

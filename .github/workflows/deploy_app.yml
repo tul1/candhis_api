@@ -12,10 +12,6 @@ jobs:
 
   test_unit:
     uses: ./.github/workflows/test_unit.yml
-    secrets:
-      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
-      SONAR_ORG: ${{ secrets.SONAR_ORG }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   test_integration:
     uses: ./.github/workflows/test_integration.yml

@@ -63,6 +63,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -71,10 +72,12 @@ services:
     networks:
       - candhis_network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
+      # Single-node clusters are often yellow; that is still usable.
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
+      interval: 10s
       timeout: 10s
-      retries: 10
+      retries: 30
+      start_period: 30s
 
   metricbeat:
     image: docker.elastic.co/beats/metricbeat:8.1.0

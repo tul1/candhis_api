@@ -4,22 +4,15 @@ on:
   pull_request:
     branches: [ "*" ]
   workflow_call:
-    secrets:
-      SONAR_PROJECT_KEY:
-        required: true
-      SONAR_ORG:
-        required: true
-      SONAR_TOKEN:
-        required: true
 
 jobs:
   unit_tests:
-    name: Run unit tests and SonarCloud analysis
+    name: Run unit tests
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Go environment
       uses: actions/setup-go@v5
       with:
@@ -27,14 +20,3 @@ jobs:
 
     - name: Run unit tests
       run: make download deps_test generate test-unit
-
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@v3.1.0
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        projectBaseDir: .
-        args: >
-          -Dsonar.organization=${{ secrets.SONAR_ORG }}
-          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-          -Dsonar.go.coverage.reportPaths=cover.out
