@@ -1,9 +1,10 @@
 name: integration tests
 
+# Manual only — needs Elasticsearch, Chrome, and often the live Candhis site.
+# Local: make run-infra && make test-integration
+
 on:
-  pull_request:
-    branches: [ "*" ]
-  workflow_call:
+  workflow_dispatch:
 
 jobs:
     integration_tests:
@@ -22,18 +23,19 @@ jobs:
 
         - name: Wait for Elasticsearch to be ready
           run: |
-            # Single-node clusters often stay yellow; green is not required.
             for i in $(seq 1 60); do
-              status=$(curl -sf http://localhost:9200/_cluster/health | grep -oE '"status":"(green|yellow|red)"' || true)
-              if echo "$status" | grep -qE 'green|yellow'; then
-                echo "Elasticsearch is ready ($status)"
+              body=$(curl -sf http://localhost:9200/_cluster/health || true)
+              if echo "$body" | grep -qE '"status":"(green|yellow)"'; then
+                echo "Elasticsearch is ready"
+                echo "$body"
                 exit 0
               fi
               echo "Waiting for Elasticsearch... ($i/60)"
               sleep 5
             done
             echo "Elasticsearch did not become ready in time"
-            curl -s http://localhost:9200/_cluster/health || true
+            docker ps -a || true
+            docker logs elasticsearch || true
             exit 1
 
         - name: Run and wait for Headless Chrome to be ready
